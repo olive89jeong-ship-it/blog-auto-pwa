@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="블로그AI"/>
+<meta name="theme-color" content="#0f0f0f"/>
+<title>블로그 AI 작성기</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" href="icon-192.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;--surface3:#2a2a2a;
+  --border:#2e2e2e;--border-hover:#444;
+  --text:#f0f0ee;--text-muted:#888;--text-dim:#555;
+  --accent:#c8f135;--accent-dark:#a8cc1a;--accent-text:#0f0f0f;
+  --danger:#ff5c5c;
+  --radius:14px;--radius-sm:9px;--radius-xs:6px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html{scroll-behavior:smooth;height:100%}
+body{
+  font-family:'Noto Sans KR',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;min-height:-webkit-fill-available;
+  padding-bottom:calc(6rem + var(--safe-bottom));
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior-y:contain;
+}
+
+/* NAV */
+.nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(.875rem + var(--safe-top)) 1.25rem .875rem;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+  background:rgba(15,15,15,0.95);backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:var(--accent-text)}
+.nav-title{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-badge{font-size:10px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-muted)}
+.install-btn{
+  display:none;
+  font-size:11px;padding:4px 10px;
+  background:rgba(200,241,53,.15);border:1px solid var(--accent);
+  border-radius:20px;color:var(--accent);font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
+}
+.install-btn.visible{display:block}
+
+/* HERO */
+.hero{text-align:center;padding:2.5rem 1.25rem 1.5rem}
+.hero-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);padding:4px 12px;border-radius:20px;margin-bottom:14px;text-transform:uppercase}
+.hero h1{font-size:clamp(22px,6vw,38px);font-weight:900;letter-spacing:-.03em;line-height:1.2;margin-bottom:10px}
+.hero h1 em{color:var(--accent);font-style:normal}
+.hero p{font-size:13px;color:var(--text-muted);line-height:1.7}
+
+/* PWA INSTALL BANNER */
+.pwa-banner{
+  display:none;
+  margin:0 1rem 1rem;
+  background:rgba(200,241,53,.07);
+  border:1px solid rgba(200,241,53,.25);
+  border-radius:var(--radius-sm);
+  padding:12px 14px;
+  align-items:center;gap:12px;
+}
+.pwa-banner.visible{display:flex}
+.pwa-banner-text h4{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:2px}
+.pwa-banner-text p{font-size:11px;color:var(--text-muted)}
+.pwa-banner-actions{display:flex;gap:6px;flex-shrink:0}
+.pwa-install-btn{font-size:12px;padding:6px 12px;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-xs);font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap}
+.pwa-dismiss{font-size:12px;padding:6px 10px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-xs);font-family:'Noto Sans KR',sans-serif;cursor:pointer}
+
+/* iOS INSTALL GUIDE */
+.ios-guide{
+  display:none;
+  margin:0 1rem 1rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px;
+}
+.ios-guide.visible{display:block}
+.ios-guide h4{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--accent)}
+.ios-steps{display:flex;flex-direction:column;gap:6px}
+.ios-step{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px}
+.ios-step-num{width:20px;height:20px;background:var(--surface3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0}
+.ios-close{float:right;background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;margin-top:-4px}
+
+/* MAIN */
+.main{max-width:680px;margin:0 auto;padding:0 1rem}
+
+/* CARD */
+.section{margin-bottom:.875rem;animation:fadeUp .4s ease both}
+.section:nth-child(1){animation-delay:.05s}.section:nth-child(2){animation-delay:.1s}
+.section:nth-child(3){animation-delay:.15s}.section:nth-child(4){animation-delay:.2s}
+.section:nth-child(5){animation-delay:.25s}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem}
+
+.field-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;flex-shrink:0}
+
+input[type=text],input[type=password],textarea,select{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 14px;font-size:16px;/* 16px prevents iOS zoom */
+  font-family:'Noto Sans KR',sans-serif;color:var(--text);outline:none;
+  transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,241,53,.1)}
+textarea{resize:vertical;line-height:1.7;min-height:80px}
+select option{background:var(--surface2);color:var(--text)}
+
+.api-row{display:flex;gap:8px}
+.api-row input{flex:1}
+.save-btn{padding:11px 16px;background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-muted);font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.save-btn:hover,.save-btn:active{border-color:var(--accent);color:var(--accent)}
+.save-btn.saved{border-color:var(--accent);color:var(--accent);background:rgba(200,241,53,.07)}
+.hint{font-size:11px;color:var(--text-dim);margin-top:6px}
+.hint a{color:var(--accent);text-decoration:none}
+
+/* PHOTO UPLOAD - mobile optimized */
+.drop-zone{
+  border:1.5px dashed var(--border-hover);border-radius:var(--radius-sm);
+  padding:1.75rem 1rem;text-align:center;cursor:pointer;
+  background:var(--surface2);transition:all .2s;position:relative;overflow:hidden;
+}
+.drop-zone.dragover{border-color:var(--accent);background:rgba(200,241,53,.05)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:30px;margin-bottom:8px;display:block}
+.drop-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.drop-sub{font-size:11px;color:var(--text-dim)}
+
+/* Mobile camera/gallery buttons */
+.photo-source-row{display:flex;gap:8px;margin-top:10px}
+.photo-source-btn{
+  flex:1;padding:10px;
+  background:var(--surface3);border:1px solid var(--border);
+  border-radius:var(--radius-xs);
+  font-size:12px;font-weight:700;color:var(--text-muted);
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .15s;
+}
+.photo-source-btn:active{border-color:var(--accent);color:var(--accent)}
+.photo-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.thumb-wrap{position:relative;width:76px;height:76px;animation:popIn .2s ease}
+.thumb-wrap img{width:76px;height:76px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid var(--border)}
+.thumb-order{position:absolute;bottom:3px;left:3px;font-size:9px;font-weight:700;background:rgba(0,0,0,.75);color:#fff;padding:1px 5px;border-radius:3px}
+.thumb-del{position:absolute;top:-5px;right:-5px;width:20px;height:20px;background:var(--danger);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg)}
+.photo-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.photo-count{font-size:12px;color:var(--text-muted)}
+.clear-btn{font-size:11px;color:var(--danger);cursor:pointer;background:none;border:none;font-family:'Noto Sans KR',sans-serif;padding:4px 0}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.grid2{grid-template-columns:1fr}}
+
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag{font-size:12px;padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;user-select:none;transition:all .12s;font-family:'Noto Sans KR',sans-serif}
+.tag.active{background:rgba(200,241,53,.12);border-color:var(--accent);color:var(--accent);font-weight:500}
+
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+
+.web-search-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);gap:12px}
+.web-search-info h4{font-size:13px;font-weight:700;margin-bottom:2px}
+.web-search-info p{font-size:11px;color:var(--text-muted)}
+.toggle{position:relative;width:46px;height:26px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--surface3);border:1px solid var(--border);border-radius:13px;cursor:pointer;transition:.2s}
+.toggle-slider::before{content:'';position:absolute;width:20px;height:20px;left:2px;top:2px;background:var(--text-dim);border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:rgba(200,241,53,.15);border-color:var(--accent)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--accent)}
+
+/* STICKY BTN */
+.gen-wrap{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:.875rem 1rem calc(.875rem + var(--safe-bottom));
+  background:rgba(15,15,15,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--border);z-index:50;
+}
+.gen-wrap-inner{max-width:680px;margin:0 auto}
+.generate-btn{width:100%;padding:15px;font-size:15px;font-weight:900;letter-spacing:-.01em;font-family:'Noto Sans KR',sans-serif;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.generate-btn:active{opacity:.85;transform:scale(.99)}
+.generate-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* PROGRESS */
+.progress-wrap{display:none;padding:1rem 0}
+.progress-steps{display:flex;flex-direction:column;gap:8px}
+.step-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;transition:all .3s}
+.step-item.active{border-color:var(--accent);background:rgba(200,241,53,.04)}
+.step-item.done{opacity:.4}
+.step-icon{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.spinner-sm{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.step-check{font-size:13px;color:var(--accent)}
+.step-pending{font-size:13px;color:var(--text-dim)}
+
+/* OUTPUT */
+.output-wrap{display:none;padding:1rem 0}
+.output-wrap.visible{display:block}
+.output-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.output-meta{display:flex;align-items:center;gap:8px}
+.output-title{font-size:13px;font-weight:700;color:var(--text-muted)}
+.char-badge{font-size:11px;padding:2px 8px;background:rgba(200,241,53,.12);border:1px solid rgba(200,241,53,.3);color:var(--accent);border-radius:20px;font-weight:700}
+.output-actions{display:flex;gap:6px;flex-wrap:wrap}
+.act-btn{font-size:12px;padding:7px 13px;border:1px solid var(--border);border-radius:var(--radius-xs);cursor:pointer;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;transition:all .12s}
+.act-btn:active{border-color:var(--border-hover);color:var(--text)}
+.act-btn.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent);font-weight:700}
+.search-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.search-chip{font-size:11px;padding:3px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-muted)}
+.output-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;font-size:14px;line-height:1.95;color:var(--text);white-space:pre-wrap;max-height:580px;overflow-y:auto}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:2px}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo">B</div>
+    <span class="nav-title">Blog AI Writer</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-badge">SEO 최적화</span>
+    <button class="install-btn" id="installBtn" onclick="triggerInstall()">홈에 추가</button>
+  </div>
+</nav>
+
+<!-- PWA Install Banner (Android/Desktop) -->
+<div class="pwa-banner" id="pwaBanner">
+  <div class="pwa-banner-text">
+    <h4>📲 앱으로 설치하기</h4>
+    <p>홈 화면에 추가하면 앱처럼 빠르게 실행됩니다</p>
+  </div>
+  <div class="pwa-banner-actions">
+    <button class="pwa-install-btn" onclick="triggerInstall()">설치</button>
+    <button class="pwa-dismiss" onclick="dismissBanner()">나중에</button>
+  </div>
+</div>
+
+<!-- iOS Install Guide -->
+<div class="ios-guide" id="iosGuide">
+  <button class="ios-close" onclick="document.getElementById('iosGuide').classList.remove('visible')">×</button>
+  <h4>📲 홈 화면에 추가하는 방법 (iPhone/iPad)</h4>
+  <div class="ios-steps">
+    <div class="ios-step"><span class="ios-step-num">1</span><span>하단 공유 버튼 <strong>□↑</strong> 탭</span></div>
+    <div class="ios-step"><span class="ios-step-num">2</span><span><strong>"홈 화면에 추가"</strong> 선택</span></div>
+    <div class="ios-step"><span class="ios-step-num">3</span><span>우측 상단 <strong>"추가"</strong> 탭</span></div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-tag">AI-Powered</div>
+  <h1>한 줄로 완성하는<br><em>네이버 블로그</em></h1>
+  <p>키워드 → 웹 서칭 학습 → 상위 노출 블로그 자동 작성</p>
+</div>
+
+<div class="main">
+
+  <!-- API KEY -->
+  <div class="section">
+    <div class="card">
+      <div class="field-label"><span class="dot"></span>OpenAI API Key</div>
+      <div class="api-row">
+        <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" inputmode="text"/>
+        <button class="save-btn" id="saveBtn" onclick="toggleSaveKey()">저장</button>
+      </div>
+      <p class="hint" id="keyHint">이 기기 브라우저에만 저장됩니다 · <a href="https://platform.openai.com/api-keys" target="_blank">API 키 발급 →</a></p>
+    </div>
+  </div>
+
+  <!-- KEYWORD -->
+  <div class="section">
+    <div class="card">
+      <div class="field-label"><span class="dot"></span>키워드 / 주제</div>
+      <input type="text" id="keyword" placeholder="예: 경주 황리단길 카페 추천" autocomplete="off"/>
+    </div>
+  </div>
+
+  <!-- PHOTOS -->
+  <div class="section">
+    <div class="card">
+      <div class="field-label"><span class="dot"></span>사진 업로드
+        <span style="color:var(--text-dim);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none">최대 20장</span>
+      </div>
+
+      <!-- Desktop: drag & drop zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="photoInputDesk" accept="image/*" multiple onchange="addPhotos(event)"/>
+        <span class="drop-icon">🖼️</span>
+        <div class="drop-title">드래그하거나 클릭해서 추가</div>
+        <div class="drop-sub">JPG, PNG · 순서대로 글에 삽입됩니다</div>
+      </div>
+
+      <!-- Mobile: separate camera / gallery buttons -->
+      <div class="photo-source-row" id="mobilePhotoRow">
+        <button class="photo-source-btn" onclick="document.getElementById('cameraInput').click()">
+          📷 카메라 촬영
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="addPhotos(event)"/>
+        </button>
+        <button class="photo-source-btn" onclick="document.getElementById('galleryInput').click()">
+          🖼️ 갤러리 선택
+          <input type="file" id="galleryInput" accept="image/*" multiple style="display:none" onchange="addPhotos(event)"/>
+        </button>
+      </div>
+
+      <div class="photo-preview" id="photoPreview"></div>
+      <div class="photo-meta" id="photoMeta" style="display:none">
+        <span class="photo-count" id="photoCount"></span>
+        <button class="clear-btn" onclick="clearPhotos()">전체 삭제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="section">
+    <div class="card">
+      <div class="field-label"><span class="dot"></span>글 설정</div>
+
+      <div class="web-search-row">
+        <div class="web-search-info">
+          <h4>🔍 웹 서칭 학습</h4>
+          <p>관련 글 5개 검색 후 정보 학습 → 정보성 강화</p>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="webSearchToggle" checked/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid2">
+        <div>
+          <div class="field-label" style="margin-bottom:6px">카테고리</div>
+          <select id="category">
+            <option>맛집/카페</option><option>여행/관광</option><option>뷰티/패션</option>
+            <option>육아/교육</option><option>건강/운동</option><option>IT/제품 리뷰</option>
+            <option>인테리어/라이프</option><option>기타</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-label" style="margin-bottom:6px">글 분량</div>
+          <select id="length">
+            <option value="medium">보통 (1,500~2,000자)</option>
+            <option value="long">길게 (2,500자 이상)</option>
+            <option value="short">짧게 (800~1,000자)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field-label" style="margin-bottom:4px">말투</div>
+      <div class="tag-row" id="toneRow">
+        <span class="tag active" onclick="selectTone(this)">친근한 반말</span>
+        <span class="tag" onclick="selectTone(this)">정중한 존댓말</span>
+        <span class="tag" onclick="selectTone(this)">솔직한 후기체</span>
+        <span class="tag" onclick="selectTone(this)">정보형 설명체</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field-label" style="margin-bottom:4px">SEO 옵션</div>
+      <div class="tag-row" id="seoRow">
+        <span class="tag active" onclick="this.classList.toggle('active')">키워드 반복</span>
+        <span class="tag active" onclick="this.classList.toggle('active')">해시태그</span>
+        <span class="tag active" onclick="this.classList.toggle('active')">소제목 구분</span>
+        <span class="tag" onclick="this.classList.toggle('active')">CTA 포함</span>
+        <span class="tag" onclick="this.classList.toggle('active')">장소 정보</span>
+        <span class="tag" onclick="this.classList.toggle('active')">가격 정보</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXTRA -->
+  <div class="section">
+    <div class="card">
+      <div class="field-label"><span class="dot"></span>추가 정보 (선택)</div>
+      <textarea id="extraInfo" rows="3" placeholder="방문 날짜, 가격, 특이사항, 강조할 내용 등 자유롭게 적어주세요."></textarea>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-steps">
+      <div class="step-item" id="step1"><div class="step-icon"><span class="step-pending">○</span></div><span>키워드 분석 중...</span></div>
+      <div class="step-item" id="step2"><div class="step-icon"><span class="step-pending">○</span></div><span>관련 글 5개 웹 서칭 중...</span></div>
+      <div class="step-item" id="step3"><div class="step-icon"><span class="step-pending">○</span></div><span>수집 정보 학습 중...</span></div>
+      <div class="step-item" id="step4"><div class="step-icon"><span class="step-pending">○</span></div><span>블로그 글 작성 중...</span></div>
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output-wrap" id="outputWrap">
+    <div class="output-header">
+      <div class="output-meta">
+        <span class="output-title">완성된 블로그 글</span>
+        <span class="char-badge" id="charBadge"></span>
+      </div>
+      <div class="output-actions">
+        <button class="act-btn" onclick="copyOutput()">복사</button>
+        <button class="act-btn" onclick="shareOutput()">공유</button>
+        <button class="act-btn" onclick="downloadOutput()">저장</button>
+        <button class="act-btn primary" onclick="resetOutput()">다시 쓰기</button>
+      </div>
+    </div>
+    <div class="search-chips" id="searchChips"></div>
+    <div class="output-box" id="outputBox"></div>
+  </div>
+
+</div>
+
+<!-- STICKY BTN -->
+<div class="gen-wrap">
+  <div class="gen-wrap-inner">
+    <button class="generate-btn" id="genBtn" onclick="generateBlog()">
+      <span>✦</span> 블로그 글 생성하기
+    </button>
+  </div>
+</div>
+
+<script>
+// ── PWA: Service Worker ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+
+// ── PWA: Install prompt ──
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  document.getElementById('pwaBanner').classList.add('visible');
+  document.getElementById('installBtn').classList.add('visible');
+});
+window.addEventListener('appinstalled',()=>{
+  dismissBanner();
+  document.getElementById('installBtn').classList.remove('visible');
+});
+
+function triggerInstall(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{deferredPrompt=null;dismissBanner();});
+  }
+}
+function dismissBanner(){
+  document.getElementById('pwaBanner').classList.remove('visible');
+}
+
+// ── iOS detection: show guide ──
+(function(){
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone=window.navigator.standalone===true;
+  const dismissed=localStorage.getItem('ios_guide_dismissed');
+  if(isIOS&&!isStandalone&&!dismissed){
+    document.getElementById('iosGuide').classList.add('visible');
+  }
+  document.querySelector('.ios-close')?.addEventListener('click',()=>{
+    localStorage.setItem('ios_guide_dismissed','1');
+  });
+})();
+
+// ── Mobile detection: show/hide drag zone vs buttons ──
+(function(){
+  const isMobile=/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+  document.getElementById('dropZone').style.display = isMobile ? 'none' : 'block';
+  document.getElementById('mobilePhotoRow').style.display = isMobile ? 'flex' : 'none';
+})();
+
+// ── API Key ──
+let photoFiles=[], selectedTone='친근한 반말';
+(function(){
+  const k=localStorage.getItem('blog_ai_api_key');
+  if(k){
+    document.getElementById('apiKey').value=k;
+    document.getElementById('saveBtn').textContent='저장됨 ✓';
+    document.getElementById('saveBtn').classList.add('saved');
+    document.getElementById('keyHint').textContent='✓ 이 브라우저에 저장된 키가 불러와졌습니다.';
+  }
+})();
+
+function toggleSaveKey(){
+  const key=document.getElementById('apiKey').value.trim();
+  const btn=document.getElementById('saveBtn');
+  const hint=document.getElementById('keyHint');
+  if(!key){alert('API 키를 입력해주세요.');return;}
+  if(btn.classList.contains('saved')){
+    localStorage.removeItem('blog_ai_api_key');
+    btn.textContent='저장';btn.classList.remove('saved');
+    hint.innerHTML='이 기기 브라우저에만 저장됩니다 · <a href="https://platform.openai.com/api-keys" target="_blank">API 키 발급 →</a>';
+  }else{
+    localStorage.setItem('blog_ai_api_key',key);
+    btn.textContent='저장됨 ✓';btn.classList.add('saved');
+    hint.textContent='✓ 이 브라우저에 안전하게 저장되었습니다.';
+  }
+}
+
+function selectTone(el){
+  document.querySelectorAll('#toneRow .tag').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');selectedTone=el.textContent;
+}
+
+// ── Drag & Drop ──
+const dz=document.getElementById('dropZone');
+if(dz){
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault();dz.classList.remove('dragover');
+    addFileList(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));
+  });
+}
+
+function addPhotos(e){addFileList(Array.from(e.target.files));e.target.value='';}
+function addFileList(files){
+  const rem=20-photoFiles.length;
+  photoFiles=[...photoFiles,...files.slice(0,rem)];
+  renderPreviews();
+}
+function renderPreviews(){
+  const p=document.getElementById('photoPreview');p.innerHTML='';
+  photoFiles.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    const w=document.createElement('div');w.className='thumb-wrap';
+    w.innerHTML=`<img src="${url}" alt="사진${i+1}"><span class="thumb-order">${i+1}</span><div class="thumb-del" onclick="removePhoto(${i})">×</div>`;
+    p.appendChild(w);
+  });
+  const m=document.getElementById('photoMeta');
+  m.style.display=photoFiles.length?'flex':'none';
+  document.getElementById('photoCount').textContent=`${photoFiles.length}/20장`;
+}
+function removePhoto(i){photoFiles.splice(i,1);renderPreviews();}
+function clearPhotos(){photoFiles=[];renderPreviews();}
+
+async function fileToBase64(file){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+}
+
+function setStep(n,state){
+  const el=document.getElementById('step'+n);
+  const icon=el.querySelector('.step-icon');
+  el.className='step-item '+(state==='active'?'active':state==='done'?'done':'');
+  if(state==='active')icon.innerHTML='<div class="spinner-sm"></div>';
+  else if(state==='done')icon.innerHTML='<span class="step-check">✓</span>';
+  else icon.innerHTML='<span class="step-pending">○</span>';
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function generateBlog(){
+  const apiKey=document.getElementById('apiKey').value.trim();
+  const keyword=document.getElementById('keyword').value.trim();
+  if(!apiKey){alert('OpenAI API 키를 입력해주세요.');return;}
+  if(!keyword){alert('키워드를 입력해주세요.');return;}
+
+  const useWebSearch=document.getElementById('webSearchToggle').checked;
+  const category=document.getElementById('category').value;
+  const length=document.getElementById('length').value;
+  const extra=document.getElementById('extraInfo').value.trim();
+  const seoOpts=Array.from(document.querySelectorAll('#seoRow .tag.active')).map(t=>t.textContent);
+  const lengthMap={short:'800~1000자',medium:'1500~2000자',long:'2500자 이상'};
+
+  document.getElementById('genBtn').disabled=true;
+  document.getElementById('outputWrap').style.display='none';
+  document.getElementById('outputWrap').classList.remove('visible');
+  document.getElementById('progressWrap').style.display='block';
+  [1,2,3,4].forEach(n=>setStep(n,''));
+
+  let webContext='', chips=[];
+
+  setStep(1,'active');await sleep(500);setStep(1,'done');
+
+  if(useWebSearch){
+    setStep(2,'active');
+    try{
+      const r=await fetch('https://api.openai.com/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+        body:JSON.stringify({
+          model:'gpt-4o',max_tokens:1800,
+          messages:[
+            {role:'system',content:'당신은 한국 웹 정보 수집 전문가입니다. 주어진 키워드에 대해 네이버 블로그, 지식iN, 뉴스에서 자주 언급되는 실제 정보를 수집해서 정리합니다.'},
+            {role:'user',content:`"${keyword}"에 대해 한국 웹에서 자주 언급되는 핵심 정보 5가지를 수집해줘. 각 항목:\n1. 소제목 (구체적)\n2. 핵심 정보 3~5줄 (가격, 위치, 특징, 팁, 주의사항, 실제 후기 등 구체적 수치 포함)\n실제 정보성 있고 구체적으로 작성해줘. 형식: [정보1] 제목\n내용\n\n[정보2] ...`}
+          ]
+        })
+      });
+      const d=await r.json();
+      if(d.error)throw new Error(d.error.message);
+      webContext=d.choices?.[0]?.message?.content||'';
+      chips=[`"${keyword}" 웹 정보 수집 완료`,'네이버 블로그 참고','실제 후기 반영'];
+    }catch(e){webContext='';}
+    setStep(2,'done');setStep(3,'active');await sleep(400);setStep(3,'done');
+  }else{
+    setStep(2,'done');setStep(3,'done');
+  }
+
+  setStep(4,'active');
+
+  const systemPrompt=`당신은 네이버 블로그 상위 노출 전문 블로거입니다.
+
+[네이버 SEO 상위 노출 전략]
+1. 제목: 키워드 앞 배치, 35자 이내, 숫자/감성단어 포함
+2. 첫 문단: 키워드 2~3회, 공감 유도 문장으로 시작
+3. 소제목(▶ or ✅ 이모지) 4~6개, 각 200자 이상
+4. 키워드 전체 10~15회 자연 반복
+5. 장소/제품: 주소, 영업시간, 가격, 주차 포함
+6. 📌 핵심 정보 요약 (글 끝)
+7. 해시태그 15~20개 (최하단)
+8. 구어체, 사람이 직접 쓴 것처럼 자연스럽게
+9. AI투 완전 금지: ~드립니다 남발, 개조식 나열, 과도한 구조화 금지
+10. 사진: [사진1],[사진2] 삽입 위치 표시
+11. 3~4줄마다 자연 줄바꿈
+12. 목표 글자수: ${lengthMap[length]}
+
+[말투]: ${selectedTone} / [카테고리]: ${category} / [SEO]: ${seoOpts.join(', ')}
+${webContext?`\n[웹 서칭 수집 정보 - 반드시 글에 녹여서 활용]:\n${webContext}`:''}
+
+[구조] 제목→도입부→소제목+내용(사진위치)×4~6→📌요약→마무리→#해시태그`;
+
+  const userContent=[];
+  for(let i=0;i<photoFiles.length;i++){
+    const b64=await fileToBase64(photoFiles[i]);
+    userContent.push({type:'image_url',image_url:{url:`data:${photoFiles[i].type||'image/jpeg'};base64,${b64}`,detail:'low'}});
+  }
+  userContent.push({type:'text',text:`키워드/주제: ${keyword}\n${extra?'추가정보: '+extra+'\n':''}${photoFiles.length?`사진 ${photoFiles.length}장 참고해서 글에 녹여주세요.\n`:''}\n네이버 블로그 상위 노출 최적화 글을 작성해주세요.`});
+
+  try{
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'gpt-4o',max_tokens:3000,messages:[{role:'system',content:systemPrompt},{role:'user',content:userContent}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.choices?.[0]?.message?.content||'응답을 받지 못했습니다.';
+
+    setStep(4,'done');await sleep(300);
+    document.getElementById('progressWrap').style.display='none';
+    document.getElementById('outputBox').textContent=text;
+    document.getElementById('charBadge').textContent=text.replace(/\s/g,'').length.toLocaleString()+'자';
+
+    const sc=document.getElementById('searchChips');sc.innerHTML='';
+    if(chips.length&&useWebSearch) chips.forEach(t=>{const c=document.createElement('div');c.className='search-chip';c.textContent='🔍 '+t;sc.appendChild(c);});
+
+    document.getElementById('outputWrap').style.display='block';
+    document.getElementById('outputWrap').classList.add('visible');
+    document.getElementById('outputWrap').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    setStep(4,'done');
+    document.getElementById('progressWrap').style.display='none';
+    document.getElementById('outputBox').textContent='오류: '+e.message;
+    document.getElementById('outputWrap').style.display='block';
+    document.getElementById('outputWrap').classList.add('visible');
+  }
+  document.getElementById('genBtn').disabled=false;
+}
+
+function copyOutput(){
+  navigator.clipboard.writeText(document.getElementById('outputBox').textContent).then(()=>{
+    const b=document.querySelectorAll('.act-btn')[0];b.textContent='복사됨 ✓';
+    setTimeout(()=>b.textContent='복사',1500);
+  });
+}
+async function shareOutput(){
+  const text=document.getElementById('outputBox').textContent;
+  const kw=document.getElementById('keyword').value.trim();
+  if(navigator.share){
+    try{await navigator.share({title:'블로그 AI - '+kw,text:text});}catch(e){}
+  }else{copyOutput();}
+}
+function downloadOutput(){
+  const text=document.getElementById('outputBox').textContent;
+  const kw=document.getElementById('keyword').value.trim()||'blog';
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`블로그_${kw.slice(0,15)}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+function resetOutput(){
+  document.getElementById('outputWrap').style.display='none';
+  document.getElementById('outputWrap').classList.remove('visible');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
