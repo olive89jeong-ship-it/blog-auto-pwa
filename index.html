@@ -417,9 +417,9 @@ select option{background:var(--surface2)}
           <div>
             <div class="field-label" style="margin-bottom:6px">글 분량</div>
             <select id="length">
-              <option value="medium">보통 (1,500~2,000자)</option>
-              <option value="long">길게 (2,500자 이상)</option>
-              <option value="short">짧게 (800~1,000자)</option>
+              <option value="medium">표준 (2,000~2,500자) ← 권장</option>
+              <option value="long">길게 (3,000자 이상)</option>
+              <option value="short">짧게 (1,500~2,000자)</option>
             </select>
           </div>
         </div>
@@ -985,7 +985,11 @@ async function generateBlog(){
   const length=document.getElementById('length').value;
   const extra=document.getElementById('extraInfo').value.trim();
   const seoOpts=Array.from(document.querySelectorAll('#seoRow .tag.active')).map(t=>t.textContent);
-  const lengthMap={short:'800~1000자',medium:'1500~2000자',long:'2500자 이상'};
+  const lengthMap={
+    short:'1,500자 이상 ~ 2,000자 (짧은 글도 최소 1,500자 필수)',
+    medium:'2,000자 이상 ~ 2,500자 (표준 네이버 블로그 분량)',
+    long:'3,000자 이상 (깊이 있는 정보성 글, 체류시간 극대화)'
+  };
 
   document.getElementById('genBtn').disabled=true;
   document.getElementById('outputWrap').style.display='none';
@@ -1006,7 +1010,7 @@ async function generateBlog(){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
         body:JSON.stringify({
-          model:'gpt-4o', max_tokens:1800,
+          model:'gpt-4o', max_tokens:2000,
           messages:[
             {role:'system',content:'당신은 한국 웹 정보 수집 전문가입니다. 주어진 키워드에 대해 네이버 블로그, 지식iN, 뉴스에서 자주 언급되는 실제 정보를 수집해서 정리합니다.'},
             {role:'user',content:`"${keyword}"에 대해 한국 웹에서 자주 언급되는 핵심 정보 5가지를 수집해줘.\n각 항목:\n1. 소제목 (구체적)\n2. 핵심 정보 3~5줄 (가격, 위치, 특징, 팁, 주의사항 등 구체적 수치 포함)\n형식: [정보1] 제목\n내용\n\n[정보2] ...`}
@@ -1023,26 +1027,91 @@ async function generateBlog(){
 
   // STEP 4: Write blog
   setStep(4,'active');
-  const systemPrompt=`당신은 네이버 블로그 상위 노출 전문 블로거입니다.
+  const systemPrompt=`당신은 10년 경력의 네이버 블로그 상위 노출 전문 작가입니다.
+아래 규칙을 철저히 지켜 블로그 글을 작성하세요. 글이 짧으면 절대 안 됩니다.
 
-[네이버 SEO 상위 노출 전략]
-1. 제목: 키워드 앞 배치, 35자 이내, 숫자/감성단어 포함
-2. 첫 문단: 키워드 2~3회, 공감 유도 문장으로 시작
-3. 소제목(▶ or ✅ 이모지) 4~6개, 각 200자 이상
-4. 키워드 전체 10~15회 자연 반복
-5. 장소/제품: 주소, 영업시간, 가격, 주차 포함
-6. 📌 핵심 정보 요약 (글 끝)
-7. 해시태그 15~20개 (최하단)
-8. 구어체, 사람이 직접 쓴 것처럼 자연스럽게
-9. AI투 완전 금지 (~드립니다 남발, 개조식 나열, 과도한 구조화 금지)
-10. 사진: [사진1],[사진2] 삽입 위치 표시
-11. 3~4줄마다 자연 줄바꿈, 이모지 자연스럽게
-12. 목표 글자수: ${lengthMap[length]}
+━━━━━━━━━━━━━━━━━━━━━━━━
+【 글 길이 — 가장 중요한 규칙 】
+━━━━━━━━━━━━━━━━━━━━━━━━
+목표 글자수: ${lengthMap[length]}
+⚠️ 이 글자수를 반드시 채워야 합니다. 공백 제외 기준.
+글이 짧으면 네이버 C-Rank에서 낮은 점수를 받습니다.
+각 소제목 아래 본문은 최소 300자 이상 작성하세요.
+소제목은 최소 5개 이상, 각각 충분한 분량으로 써야 합니다.
 
-[말투]: ${selectedTone} / [카테고리]: ${category} / [SEO]: ${seoOpts.join(', ')}
-${webContext?`\n[웹 서칭 수집 정보 - 반드시 글에 녹여서 활용]:\n${webContext}`:''}
+━━━━━━━━━━━━━━━━━━━━━━━━
+【 네이버 SEO & C-Rank 최적화 규칙 】
+━━━━━━━━━━━━━━━━━━━━━━━━
 
-[구조] 제목→도입부→소제목+내용(사진위치)×4~6→📌요약→마무리→#해시태그`;
+1. 제목 작성법
+   - 핵심 키워드를 제목 앞부분에 배치
+   - 35자 이내, 숫자·감성단어·궁금증 유발 포함
+   - 예: "경주 황리단길 카페 BEST 5 | 로컬이 추천하는 진짜 숨은 명소"
+
+2. 도입부 (첫 3~4문장)
+   - 독자의 공감을 끌어내는 경험담으로 시작
+   - 핵심 키워드 2~3회 자연스럽게 포함
+   - "이 글을 끝까지 읽으면 ○○을 알 수 있다"는 식으로 기대감 유도
+   - 체류시간을 높이는 훅(Hook) 문장 필수
+
+3. 소제목 구성 (5~7개)
+   - ▶ 또는 ✅ 이모지로 시작
+   - 각 소제목 아래 본문 300자 이상 (풍부한 정보 제공)
+   - 소제목 자체에도 키워드 또는 연관어 포함
+   - 단순 나열이 아닌 스토리 흐름으로 연결
+
+4. 키워드 사용 전략
+   - 핵심 키워드: 전체 글에 10~15회 자연스럽게 반복
+   - 연관 키워드(LSI): 주제와 관련된 단어들도 자연스럽게 포함
+   - 억지 반복 절대 금지 → 문맥에 맞게 녹여야 함
+
+5. 정보 밀도 (체류시간 핵심)
+   - 독자가 스크롤을 멈추게 만드는 구체적 정보
+   - 가격, 주소, 영업시간, 주차, 실제 후기, 팁, 주의사항 포함
+   - "이 글 하나로 다 해결된다"는 느낌을 줘야 함
+   - 비교, 추천 이유, 실패담, 성공 팁 등 스토리 요소 추가
+
+6. 사람이 쓴 것처럼 (AI 감지 회피)
+   - 실제 방문/경험한 사람의 솔직한 후기 톤
+   - "나는~", "솔직히~", "처음엔~", "의외로~" 같은 구어체 표현
+   - 완벽하지 않은 솔직함 포함 (단점, 아쉬운 점도 언급)
+   - ~드립니다 남발, 개조식 나열, 딱딱한 설명체 절대 금지
+   - 문단 끝마다 다음 내용이 궁금해지는 연결 문장 추가
+
+7. 시각적 구조 (스크롤 깊이 향상)
+   - 3~4줄마다 자연스러운 줄바꿈
+   - 이모지를 군데군데 자연스럽게 배치 (과용 금지)
+   - 사진 삽입 위치: [사진1], [사진2] 형식으로 표시
+   - 중간에 핵심 정보 강조 (⭐ 또는 💡 활용)
+
+8. 마무리 구성
+   - 📌 핵심 정보 한눈에 보기 (주소, 가격, 시간 등 요약)
+   - 독자에게 도움이 됐으면 좋겠다는 따뜻한 마무리
+   - 댓글/공감 유도 문장 자연스럽게 포함
+   - 해시태그 15~20개 (글 최하단, 핵심+연관+롱테일 키워드 조합)
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+【 작성 설정 】
+━━━━━━━━━━━━━━━━━━━━━━━━
+말투: ${selectedTone}
+카테고리: ${category}
+SEO 옵션: ${seoOpts.join(', ')}
+${webContext?`\n웹 서칭 수집 정보 (반드시 글에 자연스럽게 녹여서 활용):\n${webContext}`:''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+【 글 구조 】
+━━━━━━━━━━━━━━━━━━━━━━━━
+① 제목 (1줄)
+② 도입부 — 공감 + 기대감 유도 (200자 이상)
+③ 소제목1 + 본문 (300자 이상) + [사진1]
+④ 소제목2 + 본문 (300자 이상) + [사진2]
+⑤ 소제목3 + 본문 (300자 이상)
+⑥ 소제목4 + 본문 (300자 이상) + [사진3]
+⑦ 소제목5 + 본문 (300자 이상)
+⑧ (필요시 소제목6~7 추가)
+⑨ 📌 핵심 정보 요약
+⑩ 따뜻한 마무리 + 댓글 유도
+⑪ #해시태그 × 15~20개`;
 
   const userContent=[];
   for(let i=0;i<photoFiles.length;i++){
@@ -1054,14 +1123,18 @@ ${webContext?`\n[웹 서칭 수집 정보 - 반드시 글에 녹여서 활용]:\
     });
     userContent.push({type:'image_url',image_url:{url:`data:${photoFiles[i].type||'image/jpeg'};base64,${b64}`,detail:'low'}});
   }
-  userContent.push({type:'text',text:`키워드/주제: ${keyword}\n${extra?'추가정보: '+extra+'\n':''}${photoFiles.length?`사진 ${photoFiles.length}장 참고해서 글에 녹여주세요.\n`:''}\n네이버 블로그 상위 노출 최적화 글을 작성해주세요.`});
+  userContent.push({type:'text',text:`키워드/주제: ${keyword}\n${extra?'추가정보: '+extra+'\n':''}${photoFiles.length?`사진 ${photoFiles.length}장을 참고해서 각 사진에 맞는 내용을 글에 자연스럽게 녹여주세요.\n`:''}\n위 시스템 프롬프트의 글자수 규칙을 반드시 지켜서 네이버 블로그 상위 노출 최적화 글을 작성해주세요. 글이 짧으면 안 됩니다.`});
 
   let generatedText='';
   try{
     const res=await fetch('https://api.openai.com/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body:JSON.stringify({model:'gpt-4o',max_tokens:3000,messages:[{role:'system',content:systemPrompt},{role:'user',content:userContent}]})
+      body:JSON.stringify({
+        model:'gpt-4o',
+        max_tokens:4096,  // 충분한 길이 확보
+        messages:[{role:'system',content:systemPrompt},{role:'user',content:userContent}]
+      })
     });
     const data=await res.json();
     if(data.error) throw new Error(data.error.message);
