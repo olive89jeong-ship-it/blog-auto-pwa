@@ -12,6 +12,9 @@
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet"/>
 
+<!-- JSZip for bulk image download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 <!-- Firebase SDK (compat version — works without bundler/CORS issues) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -139,6 +142,7 @@ select option{background:var(--surface2)}
 .thumb-wrap{position:relative;width:76px;height:76px;animation:popIn .2s ease}
 .thumb-wrap img{width:76px;height:76px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid var(--border)}
 .thumb-order{position:absolute;bottom:3px;left:3px;font-size:9px;font-weight:700;background:rgba(0,0,0,.75);color:#fff;padding:1px 5px;border-radius:3px}
+.thumb-size{position:absolute;bottom:3px;right:3px;font-size:8px;font-weight:700;background:rgba(200,241,53,.85);color:#0f0f0f;padding:1px 4px;border-radius:3px}
 .thumb-del{position:absolute;top:-5px;right:-5px;width:20px;height:20px;background:var(--danger);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg)}
 
 .photo-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
@@ -155,12 +159,33 @@ select option{background:var(--surface2)}
 /* FIREBASE IMAGE DOWNLOAD PANEL */
 .fb-images-section{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
 .fb-images-section.visible{display:block}
-.fb-images-label{font-size:11px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.fb-images-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.fb-images-label{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+.fb-zip-btn{font-size:11px;font-weight:700;padding:5px 12px;background:var(--accent);color:var(--accent-text);border:none;border-radius:20px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.fb-zip-btn:hover{background:var(--accent-dark)}
+.fb-zip-btn:disabled{opacity:.5;cursor:not-allowed}
 .fb-images-grid{display:flex;flex-wrap:wrap;gap:8px}
 .fb-img-item{display:flex;flex-direction:column;align-items:center;gap:4px;width:76px}
 .fb-img-item img{width:76px;height:76px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid var(--border)}
+.fb-img-name{font-size:9px;color:var(--text-dim);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:76px}
 .fb-img-dl{width:100%;padding:4px 0;font-size:10px;font-weight:700;color:var(--accent);background:rgba(200,241,53,.08);border:1px solid rgba(200,241,53,.25);border-radius:4px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-align:center}
 .fb-img-dl:hover{background:rgba(200,241,53,.15)}
+
+/* NAVER COPY MODAL */
+.naver-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem}
+.naver-modal-bg.visible{display:flex}
+.naver-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:560px;max-height:80vh;display:flex;flex-direction:column}
+.naver-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.naver-modal-title{font-size:14px;font-weight:700}
+.naver-modal-close{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px}
+.naver-modal-body{padding:1rem 1.25rem;overflow-y:auto;flex:1}
+.naver-guide{font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:12px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-xs)}
+.naver-guide strong{color:var(--accent)}
+.naver-text-box{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:13px;line-height:1.8;color:var(--text);font-family:'Noto Sans KR',sans-serif;resize:none;height:240px;outline:none}
+.naver-modal-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.naver-copy-btn{flex:1;padding:11px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);cursor:pointer}
+.naver-copy-btn:hover{background:var(--accent-dark)}
+.naver-close-btn{padding:11px 16px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer}
 
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
@@ -332,13 +357,13 @@ select option{background:var(--surface2)}
       <!-- PHOTOS -->
       <div class="card">
         <div class="field-label"><span class="dot"></span>사진 업로드
-          <span style="color:var(--text-dim);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none">최대 20장 · Storage 자동 업로드</span>
+          <span style="color:var(--text-dim);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none">최대 20장 · 자동 압축 후 Storage 업로드</span>
         </div>
         <div class="drop-zone" id="dropZone">
           <input type="file" id="photoInputDesk" accept="image/*" multiple onchange="addPhotos(event)"/>
           <span class="drop-icon">🖼️</span>
           <div class="drop-title">드래그하거나 클릭해서 추가</div>
-          <div class="drop-sub">JPG, PNG · Firebase Storage에 자동 업로드</div>
+          <div class="drop-sub">JPG, PNG · 자동 압축(최대 1.2MB) · Firebase Storage 업로드</div>
         </div>
         <div class="photo-source-row" id="mobilePhotoRow">
           <button class="photo-source-btn" onclick="document.getElementById('cameraInput').click()">
@@ -361,7 +386,10 @@ select option{background:var(--surface2)}
         </div>
         <!-- 다른 기기에서 올린 이미지 다운로드 -->
         <div class="fb-images-section" id="fbImagesSection">
-          <div class="fb-images-label">☁️ Firebase에 저장된 이미지 (다운로드)</div>
+          <div class="fb-images-header">
+            <div class="fb-images-label">☁️ Firebase 저장 이미지</div>
+            <button class="fb-zip-btn" id="zipBtn" onclick="downloadAllImagesZip()">⬇ 전체 ZIP 다운로드</button>
+          </div>
           <div class="fb-images-grid" id="fbImagesGrid"></div>
         </div>
       </div>
@@ -441,6 +469,7 @@ select option{background:var(--surface2)}
           </div>
           <div class="output-actions">
             <button class="act-btn" onclick="copyOutput()">복사</button>
+            <button class="act-btn" onclick="openNaverModal()" style="border-color:rgba(3,199,90,.4);color:#03c75a">N 네이버 복사</button>
             <button class="act-btn" onclick="shareOutput()">공유</button>
             <button class="act-btn" onclick="downloadOutput()">저장</button>
             <button class="act-btn primary" onclick="resetOutput()">다시 쓰기</button>
@@ -460,6 +489,32 @@ select option{background:var(--surface2)}
     <button class="generate-btn" id="genBtn" onclick="generateBlog()">
       <span>✦</span> 블로그 글 생성하기
     </button>
+  </div>
+</div>
+
+<!-- NAVER COPY MODAL -->
+<div class="naver-modal-bg" id="naverModalBg" onclick="closeNaverModal(event)">
+  <div class="naver-modal">
+    <div class="naver-modal-header">
+      <span class="naver-modal-title">N 네이버 블로그 최적화 복사</span>
+      <button class="naver-modal-close" onclick="closeNaverModal()">×</button>
+    </div>
+    <div class="naver-modal-body">
+      <div class="naver-guide">
+        <strong>사용 방법</strong><br>
+        1. 아래 텍스트를 전체 복사<br>
+        2. 네이버 블로그 에디터 열기<br>
+        3. 에디터에서 붙여넣기 (Ctrl+V / Cmd+V)<br>
+        4. <strong>[사진1]</strong> 위치에 직접 이미지 삽입<br>
+        <br>
+        ✅ 소제목 · 줄바꿈 · 해시태그가 네이버에 최적화되었습니다.
+      </div>
+      <textarea class="naver-text-box" id="naverTextBox" readonly onclick="this.select()"></textarea>
+    </div>
+    <div class="naver-modal-footer">
+      <button class="naver-copy-btn" onclick="copyNaverText()">📋 전체 복사</button>
+      <button class="naver-close-btn" onclick="closeNaverModal()">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -649,15 +704,19 @@ function deletePost(id, e){
 }
 
 // Firebase images download panel
+let currentImageUrls = [];
+
 function renderFbImages(urls){
+  currentImageUrls = urls || [];
   const sec=document.getElementById('fbImagesSection');
   const grid=document.getElementById('fbImagesGrid');
-  if(!urls||!urls.length){ sec.classList.remove('visible'); return; }
+  if(!currentImageUrls.length){ sec.classList.remove('visible'); return; }
   sec.classList.add('visible');
-  grid.innerHTML=urls.map((u,i)=>`
+  grid.innerHTML=currentImageUrls.map((u,i)=>`
     <div class="fb-img-item">
       <img src="${u}" loading="lazy">
-      <button class="fb-img-dl" onclick="downloadFbImage('${u}','image_${i+1}.jpg')">⬇ 다운로드</button>
+      <div class="fb-img-name">사진${i+1}.jpg</div>
+      <button class="fb-img-dl" onclick="downloadFbImage('${u}','사진${i+1}.jpg')">⬇ 저장</button>
     </div>
   `).join('');
 }
@@ -668,10 +727,131 @@ function downloadFbImage(url, name){
   }).catch(()=>window.open(url,'_blank'));
 }
 
+async function downloadAllImagesZip(){
+  if(!currentImageUrls.length){ showToast('다운로드할 이미지가 없어요.'); return; }
+  const btn=document.getElementById('zipBtn');
+  btn.disabled=true;
+  btn.textContent='⏳ 압축 중...';
+  try{
+    const zip=new JSZip();
+    const folder=zip.folder('블로그_이미지');
+    for(let i=0;i<currentImageUrls.length;i++){
+      showToast(`이미지 수집 중... (${i+1}/${currentImageUrls.length})`);
+      const res=await fetch(currentImageUrls[i]);
+      const blob=await res.blob();
+      const ext=blob.type.includes('png')?'png':'jpg';
+      folder.file(`사진${i+1}.${ext}`, blob);
+    }
+    showToast('ZIP 파일 생성 중...');
+    const content=await zip.generateAsync({type:'blob'});
+    const kw=document.getElementById('keyword').value.trim()||'블로그';
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(content);
+    a.download=`${kw.slice(0,15)}_이미지.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast(`✓ 이미지 ${currentImageUrls.length}장 ZIP 다운로드 완료!`);
+  }catch(e){ showToast('다운로드 실패: '+e.message); }
+  btn.disabled=false;
+  btn.textContent='⬇ 전체 ZIP 다운로드';
+}
+
 // ══════════════════════════════════════════
-// PHOTO UPLOAD
+// NAVER BLOG OPTIMIZED COPY
+// ══════════════════════════════════════════
+function formatForNaver(text){
+  // 1. 소제목 강조 — ▶ ✅ 로 시작하는 줄은 앞뒤 줄바꿈 확보
+  let out = text;
+
+  // 2. [사진N] 태그는 그대로 유지 (에디터에서 위치 가이드로 활용)
+  // 3. 연속 줄바꿈 정리 (3개 이상 → 2개)
+  out = out.replace(/\n{3,}/g, '\n\n');
+
+  // 4. 소제목 앞뒤 여백 확보
+  out = out.replace(/\n([▶✅🔥💡📌🎯⭐].+)/g, '\n\n$1\n');
+
+  // 5. 해시태그 줄 앞에 구분선 추가
+  out = out.replace(/\n(#[가-힣\w]+)/g, (match, p1, offset, str) => {
+    const before = str.substring(Math.max(0, offset-2), offset);
+    if(before.includes('#')) return match;
+    return '\n\n' + p1;
+  });
+
+  // 6. 마지막 정리
+  out = out.trim();
+  return out;
+}
+
+function openNaverModal(){
+  const raw = document.getElementById('outputBox').textContent;
+  if(!raw){ showToast('먼저 블로그 글을 생성해주세요.'); return; }
+  const formatted = formatForNaver(raw);
+  document.getElementById('naverTextBox').value = formatted;
+  document.getElementById('naverModalBg').classList.add('visible');
+}
+
+function closeNaverModal(e){
+  if(e && e.target !== document.getElementById('naverModalBg')) return;
+  document.getElementById('naverModalBg').classList.remove('visible');
+}
+
+function copyNaverText(){
+  const text = document.getElementById('naverTextBox').value;
+  navigator.clipboard.writeText(text).then(()=>{
+    showToast('📋 네이버 최적화 텍스트 복사 완료! 에디터에 붙여넣기 하세요.');
+    setTimeout(()=>document.getElementById('naverModalBg').classList.remove('visible'), 1200);
+  });
+}
+
+// ══════════════════════════════════════════
+// PHOTO UPLOAD + 자동 압축
 // ══════════════════════════════════════════
 let photoFiles=[], selectedTone='친근한 반말';
+
+// 블로그 최적화 이미지 압축
+// 최대 1920px, 품질 0.82, 최대 1.2MB
+async function compressImage(file, maxW=1920, maxH=1920, quality=0.82, maxSizeKB=1200){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let {width:w, height:h}=img;
+
+      // 비율 유지 리사이즈
+      if(w>maxW||h>maxH){
+        const ratio=Math.min(maxW/w, maxH/h);
+        w=Math.round(w*ratio);
+        h=Math.round(h*ratio);
+      }
+
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+
+      // 품질 자동 조정 (목표 크기 맞출 때까지)
+      let q=quality;
+      const tryCompress=()=>{
+        canvas.toBlob(blob=>{
+          if(!blob){ resolve(file); return; }
+          // 목표 크기보다 크면 품질 낮춤
+          if(blob.size>maxSizeKB*1024 && q>0.5){
+            q=Math.round((q-0.08)*100)/100;
+            tryCompress();
+          } else {
+            // Blob → File 변환
+            const compressed=new File([blob], file.name.replace(/\.[^.]+$/,'.jpg'), {type:'image/jpeg',lastModified:Date.now()});
+            resolve(compressed);
+          }
+        },'image/jpeg',q);
+      };
+      tryCompress();
+    };
+    img.onerror=()=>resolve(file); // 실패 시 원본 사용
+    img.src=url;
+  });
+}
 
 // Drag & drop
 const dz=document.getElementById('dropZone');
@@ -680,17 +860,49 @@ dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');addFileList(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));});
 
 function addPhotos(e){ addFileList(Array.from(e.target.files)); e.target.value=''; }
-function addFileList(files){
+
+async function addFileList(files){
   const rem=20-photoFiles.length;
-  photoFiles=[...photoFiles,...files.slice(0,rem)];
+  const toAdd=files.slice(0,rem);
+  if(!toAdd.length) return;
+
+  // 압축 중 표시
+  showToast(`🗜 이미지 압축 중... (${toAdd.length}장)`);
+
+  const compressed=[];
+  for(let i=0;i<toAdd.length;i++){
+    const file=toAdd[i];
+    // 이미 작은 파일(1.5MB 미만)은 압축 스킵
+    if(file.size < 1.5*1024*1024){
+      compressed.push(file);
+    } else {
+      const c=await compressImage(file);
+      compressed.push(c);
+      // 압축 결과 로그
+      const saved=Math.round((1-c.size/file.size)*100);
+      console.log(`압축: ${file.name} ${(file.size/1024/1024).toFixed(1)}MB → ${(c.size/1024).toFixed(0)}KB (${saved}% 절약)`);
+    }
+  }
+
+  photoFiles=[...photoFiles,...compressed];
   renderPreviews();
+
+  // 압축 완료 토스트
+  const totalOrig=toAdd.reduce((s,f)=>s+f.size,0);
+  const totalComp=compressed.reduce((s,f)=>s+f.size,0);
+  const saved=Math.round((1-totalComp/totalOrig)*100);
+  if(saved>5) showToast(`✓ 압축 완료! 용량 ${saved}% 절약 (${(totalComp/1024/1024).toFixed(1)}MB)`);
+  else showToast(`✓ ${toAdd.length}장 추가됨`);
 }
+
 function renderPreviews(){
   const p=document.getElementById('photoPreview'); p.innerHTML='';
   photoFiles.forEach((f,i)=>{
     const url=URL.createObjectURL(f);
+    const sizeKB=Math.round(f.size/1024);
+    const sizeStr=sizeKB>=1000?`${(sizeKB/1024).toFixed(1)}MB`:`${sizeKB}KB`;
     const w=document.createElement('div'); w.className='thumb-wrap';
-    w.innerHTML=`<img src="${url}"><span class="thumb-order">${i+1}</span><div class="thumb-del" onclick="removePhoto(${i})">×</div>`;
+    w.innerHTML=`<img src="${url}"><span class="thumb-order">${i+1}</span><span class="thumb-size">${sizeStr}</span><div class="thumb-del" onclick="removePhoto(${i})">×</div>`;
     p.appendChild(w);
   });
   document.getElementById('photoMeta').style.display=photoFiles.length?'flex':'none';
@@ -918,6 +1130,7 @@ function resetOutput(){
   document.getElementById('outputWrap').classList.remove('visible');
   document.getElementById('fbImagesSection').classList.remove('visible');
   currentDocId=null;
+  currentImageUrls=[];
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
