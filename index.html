@@ -193,6 +193,15 @@ select option{background:var(--surface2)}
 .tag.active{background:rgba(200,241,53,.12);border-color:var(--accent);color:var(--accent);font-weight:500}
 .divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 
+/* SESSION LOAD (PC) */
+.session-load-row{display:flex;gap:8px;margin-bottom:8px}
+.session-load-row select{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:'Noto Sans KR',sans-serif;color:var(--text);outline:none;-webkit-appearance:none}
+.session-load-row select:focus{border-color:var(--accent)}
+.session-load-btn{padding:10px 16px;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.session-loaded-info{font-size:12px;color:var(--success);margin-bottom:8px;display:flex;align-items:center}
+.session-loaded-thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.session-loaded-thumb{width:56px;height:56px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid rgba(200,241,53,.3)}
+
 .web-search-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);gap:12px}
 .web-search-info h4{font-size:13px;font-weight:700;margin-bottom:2px}
 .web-search-info p{font-size:11px;color:var(--text-muted)}
@@ -356,15 +365,35 @@ select option{background:var(--surface2)}
 
       <!-- PHOTOS -->
       <div class="card">
-        <div class="field-label"><span class="dot"></span>사진 업로드
-          <span style="color:var(--text-dim);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none">최대 20장 · 자동 압축 후 Storage 업로드</span>
+        <div class="field-label"><span class="dot"></span>사진
+          <span style="color:var(--text-dim);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none">직접 업로드 또는 모바일 세션 불러오기</span>
         </div>
+
+        <!-- 모바일 세션 불러오기 (PC 전용) -->
+        <div id="sessionLoadArea">
+          <div class="session-load-row">
+            <select id="sessionSelect" onchange="onSessionSelectChange()">
+              <option value="">📱 모바일에서 올린 세션 선택...</option>
+            </select>
+            <button class="session-load-btn" id="sessionLoadBtn" onclick="loadSessionImages()" style="display:none">불러오기</button>
+          </div>
+          <div class="session-loaded-info" id="sessionLoadedInfo" style="display:none">
+            <span id="sessionLoadedText"></span>
+            <button onclick="clearSessionImages()" style="background:none;border:none;color:var(--danger);font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-left:8px">해제</button>
+          </div>
+          <div class="session-loaded-thumbs" id="sessionLoadedThumbs"></div>
+          <div class="divider" style="margin:12px 0"></div>
+        </div>
+
+        <!-- PC 드래그앤드롭 -->
         <div class="drop-zone" id="dropZone">
           <input type="file" id="photoInputDesk" accept="image/*" multiple onchange="addPhotos(event)"/>
           <span class="drop-icon">🖼️</span>
           <div class="drop-title">드래그하거나 클릭해서 추가</div>
-          <div class="drop-sub">JPG, PNG · 자동 압축(최대 1.2MB) · Firebase Storage 업로드</div>
+          <div class="drop-sub">JPG, PNG · 자동 압축(최대 1.2MB) · 직접 업로드</div>
         </div>
+
+        <!-- 모바일 버튼 -->
         <div class="photo-source-row" id="mobilePhotoRow">
           <button class="photo-source-btn" onclick="document.getElementById('cameraInput').click()">
             📷 카메라
@@ -375,6 +404,7 @@ select option{background:var(--surface2)}
             <input type="file" id="galleryInput" accept="image/*" multiple style="display:none" onchange="addPhotos(event)"/>
           </button>
         </div>
+
         <div class="photo-preview" id="photoPreview"></div>
         <div class="photo-meta" id="photoMeta" style="display:none">
           <span class="photo-count" id="photoCount"></span>
@@ -384,7 +414,8 @@ select option{background:var(--surface2)}
           <div class="upload-bar-label" id="uploadBarLabel">업로드 중...</div>
           <div class="upload-bar-track"><div class="upload-bar-fill" id="uploadBarFill"></div></div>
         </div>
-        <!-- 다른 기기에서 올린 이미지 다운로드 -->
+
+        <!-- Firebase 저장 이미지 (블로그 글 조회 시) -->
         <div class="fb-images-section" id="fbImagesSection">
           <div class="fb-images-header">
             <div class="fb-images-label">☁️ Firebase 저장 이미지</div>
@@ -644,6 +675,66 @@ function startRealtimeSync(){
       },
       err => { setSyncStatus('error'); console.error('Firestore error:',err); }
     );
+}
+
+// ══════════════════════════════════════════
+// 📱 모바일 세션 → PC 연동
+// ══════════════════════════════════════════
+let sessionImageUrls = [];
+
+async function loadPhotoSessions(){
+  const sel=document.getElementById('sessionSelect');
+  if(!sel) return;
+  try{
+    const snap=await db.collection('photo_sessions').orderBy('createdAt','desc').limit(30).get();
+    sel.innerHTML='<option value="">📱 모바일 세션 선택...</option>';
+    if(snap.empty){
+      sel.innerHTML+='<option disabled>아직 업로드된 세션 없음 (upload.html에서 먼저 올리기)</option>';
+      return;
+    }
+    snap.docs.forEach(d=>{
+      const s=d.data();
+      const opt=document.createElement('option');
+      opt.value=d.id;
+      opt.textContent=`${s.sessionName||d.id}  (${s.count||0}장 · ${s.date||''} ${s.time||''})`;
+      sel.appendChild(opt);
+    });
+  }catch(e){ console.error('세션 목록 로드 실패',e); }
+}
+
+function onSessionSelectChange(){
+  const sel=document.getElementById('sessionSelect');
+  document.getElementById('sessionLoadBtn').style.display=sel.value?'inline-block':'none';
+}
+
+async function loadSessionImages(){
+  const sel=document.getElementById('sessionSelect');
+  const sessionId=sel.value;
+  if(!sessionId) return;
+  const btn=document.getElementById('sessionLoadBtn');
+  btn.textContent='로딩 중...'; btn.disabled=true;
+  try{
+    const snap=await db.collection('photo_sessions').doc(sessionId).get();
+    if(!snap.exists){ showToast('세션을 찾을 수 없어요.'); btn.textContent='불러오기'; btn.disabled=false; return; }
+    const data=snap.data();
+    sessionImageUrls=data.imageUrls||[];
+    // 썸네일 표시
+    document.getElementById('sessionLoadedInfo').style.display='flex';
+    document.getElementById('sessionLoadedText').textContent=`✓ "${data.sessionName}" — ${sessionImageUrls.length}장 로드됨`;
+    const thumbs=document.getElementById('sessionLoadedThumbs');
+    thumbs.innerHTML=sessionImageUrls.map(u=>`<img class="session-loaded-thumb" src="${u}" loading="lazy">`).join('');
+    showToast(`✓ ${sessionImageUrls.length}장 로드! 글 생성 시 자동 사용됩니다.`);
+  }catch(e){ showToast('불러오기 실패: '+e.message); }
+  btn.textContent='불러오기'; btn.disabled=false;
+}
+
+function clearSessionImages(){
+  sessionImageUrls=[];
+  document.getElementById('sessionLoadedInfo').style.display='none';
+  document.getElementById('sessionLoadedThumbs').innerHTML='';
+  document.getElementById('sessionSelect').value='';
+  document.getElementById('sessionLoadBtn').style.display='none';
+  showToast('세션 이미지 해제됨');
 }
 
 function renderSidebar(posts){
@@ -1114,6 +1205,7 @@ ${webContext?`\n웹 서칭 수집 정보 (반드시 글에 자연스럽게 녹�
 ⑪ #해시태그 × 15~20개`;
 
   const userContent=[];
+  // 직접 업로드한 파일 이미지
   for(let i=0;i<photoFiles.length;i++){
     const b64=await new Promise((res,rej)=>{
       const reader=new FileReader();
@@ -1123,7 +1215,12 @@ ${webContext?`\n웹 서칭 수집 정보 (반드시 글에 자연스럽게 녹�
     });
     userContent.push({type:'image_url',image_url:{url:`data:${photoFiles[i].type||'image/jpeg'};base64,${b64}`,detail:'low'}});
   }
-  userContent.push({type:'text',text:`키워드/주제: ${keyword}\n${extra?'추가정보: '+extra+'\n':''}${photoFiles.length?`사진 ${photoFiles.length}장을 참고해서 각 사진에 맞는 내용을 글에 자연스럽게 녹여주세요.\n`:''}\n위 시스템 프롬프트의 글자수 규칙을 반드시 지켜서 네이버 블로그 상위 노출 최적화 글을 작성해주세요. 글이 짧으면 안 됩니다.`});
+  // 모바일 세션에서 불러온 이미지 URL
+  for(let i=0;i<sessionImageUrls.length;i++){
+    userContent.push({type:'image_url',image_url:{url:sessionImageUrls[i],detail:'low'}});
+  }
+  const totalPhotos=photoFiles.length+sessionImageUrls.length;
+  userContent.push({type:'text',text:`키워드/주제: ${keyword}\n${extra?'추가정보: '+extra+'\n':''}${totalPhotos>0?`사진 ${totalPhotos}장을 참고해서 각 사진에 맞는 내용을 글에 자연스럽게 녹여주세요.\n`:''}\n위 시스템 프롬프트의 글자수 규칙을 반드시 지켜서 네이버 블로그 상위 노출 최적화 글을 작성해주세요. 글이 짧으면 안 됩니다.`});
 
   let generatedText='';
   try{
@@ -1154,10 +1251,13 @@ ${webContext?`\n웹 서칭 수집 정보 (반드시 글에 자연스럽게 녹�
   setStep(5,'active');
   const postId='post_'+Date.now();
   let imageUrls=[];
+  // 직접 업로드한 파일이 있으면 Storage에 업로드
   try{ imageUrls=await uploadImagesToStorage(photoFiles, postId); }
   catch(e){ showToast('⚠️ 이미지 업로드 실패: '+e.message); }
+  // 모바일 세션 이미지 URL 합치기 (이미 Storage에 있음)
+  const allImageUrls=[...imageUrls, ...sessionImageUrls];
 
-  try{ currentDocId=await saveBlogToFirestore(keyword, generatedText, imageUrls); }
+  try{ currentDocId=await saveBlogToFirestore(keyword, generatedText, allImageUrls); }
   catch(e){ showToast('⚠️ Firestore 저장 실패: '+e.message); }
   setStep(5,'done'); await sleep(300);
 
@@ -1172,7 +1272,7 @@ ${webContext?`\n웹 서칭 수집 정보 (반드시 글에 자연스럽게 녹�
   document.getElementById('outputWrap').style.display='block';
   document.getElementById('outputWrap').classList.add('visible');
   document.getElementById('outputWrap').scrollIntoView({behavior:'smooth',block:'start'});
-  renderFbImages(imageUrls);
+  renderFbImages(allImageUrls);
   showToast('✓ Firebase에 저장 완료! PC·모바일에서 동일하게 보입니다.');
   document.getElementById('genBtn').disabled=false;
 }
@@ -1232,6 +1332,7 @@ function showApp(){
   initApiKey();
   startRealtimeSync();
   initMobileDetect();
+  loadPhotoSessions(); // 모바일 세션 목록 로드
 }
 
 // PWA Service Worker

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="사진업로드"/>
+<meta name="theme-color" content="#0f0f0f"/>
+<title>📷 사진 업로드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;--surface3:#2a2a2a;
+  --border:#2e2e2e;--border-hover:#444;
+  --text:#f0f0ee;--text-muted:#888;--text-dim:#555;
+  --accent:#c8f135;--accent-dark:#a8cc1a;--accent-text:#0f0f0f;
+  --danger:#ff5c5c;--success:#4ade80;--info:#60a5fa;
+  --radius:14px;--radius-sm:9px;--radius-xs:6px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html{height:100%}
+body{
+  font-family:'Noto Sans KR',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;min-height:-webkit-fill-available;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior:contain;
+}
+
+/* ══ LOGIN ══ */
+.login-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:999;
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;
+}
+.login-screen.hidden{display:none}
+.login-box{width:100%;max-width:340px}
+.login-logo{text-align:center;margin-bottom:2rem}
+.login-logo-mark{
+  width:64px;height:64px;background:var(--accent);
+  border-radius:16px;display:inline-flex;align-items:center;
+  justify-content:center;font-size:28px;margin-bottom:12px;
+}
+.login-logo h1{font-size:20px;font-weight:900;letter-spacing:-.02em}
+.login-logo p{font-size:13px;color:var(--text-muted);margin-top:4px}
+.login-field{margin-bottom:12px}
+.login-label{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;display:block}
+.login-input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 16px;font-size:16px;
+  font-family:'Noto Sans KR',sans-serif;color:var(--text);outline:none;
+}
+.login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,241,53,.1)}
+.login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;cursor:pointer;font-size:13px;color:var(--text-muted)}
+.login-remember input{width:16px;height:16px;accent-color:var(--accent)}
+.login-btn{
+  width:100%;padding:15px;font-size:16px;font-weight:900;
+  font-family:'Noto Sans KR',sans-serif;
+  background:var(--accent);color:var(--accent-text);
+  border:none;border-radius:var(--radius-sm);cursor:pointer;
+}
+.login-error{font-size:12px;color:var(--danger);text-align:center;margin-top:10px;min-height:18px}
+
+/* ══ APP ══ */
+.app{display:none;flex-direction:column;min-height:100vh}
+.app.visible{display:flex}
+
+/* NAV */
+.nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(.875rem + var(--safe-top)) 1.25rem .875rem;
+  background:rgba(15,15,15,.95);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);position:sticky;top:0;z-index:100;
+}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-title{font-size:15px;font-weight:700}
+.nav-right{display:flex;align-items:center;gap:8px}
+.pc-link{
+  font-size:11px;padding:4px 10px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:20px;color:var(--text-muted);text-decoration:none;
+}
+.logout-btn{font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+/* CONTENT */
+.content{flex:1;padding:1.25rem 1rem calc(2rem + var(--safe-bottom));max-width:500px;margin:0 auto;width:100%}
+
+/* SESSION CARD */
+.session-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;
+}
+.session-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
+.session-input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 14px;font-size:16px;
+  font-family:'Noto Sans KR',sans-serif;color:var(--text);outline:none;
+}
+.session-input:focus{border-color:var(--accent)}
+.session-hint{font-size:11px;color:var(--text-dim);margin-top:6px}
+
+/* UPLOAD AREA */
+.upload-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;
+}
+.upload-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.upload-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+.photo-btns{display:flex;gap:10px;margin-bottom:14px}
+.photo-btn{
+  flex:1;padding:16px 12px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  font-size:14px;font-weight:700;color:var(--text-muted);
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  transition:all .15s;
+}
+.photo-btn:active{border-color:var(--accent);color:var(--accent);background:rgba(200,241,53,.07)}
+.photo-btn .btn-icon{font-size:28px}
+.photo-btn .btn-label{font-size:12px}
+
+/* PREVIEW GRID */
+.preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.preview-item{position:relative;aspect-ratio:1;animation:popIn .2s ease}
+.preview-item img{width:100%;height:100%;object-fit:cover;border-radius:var(--radius-xs);border:1px solid var(--border);display:block}
+.preview-order{position:absolute;bottom:4px;left:4px;font-size:9px;font-weight:700;background:rgba(0,0,0,.75);color:#fff;padding:1px 5px;border-radius:3px}
+.preview-size{position:absolute;bottom:4px;right:4px;font-size:8px;font-weight:700;background:rgba(200,241,53,.9);color:#0f0f0f;padding:1px 4px;border-radius:3px}
+.preview-del{position:absolute;top:-5px;right:-5px;width:20px;height:20px;background:var(--danger);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg)}
+.preview-status{
+  position:absolute;inset:0;border-radius:var(--radius-xs);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;
+}
+.preview-status.uploading{background:rgba(0,0,0,.6);color:#fff}
+.preview-status.done{background:rgba(200,241,53,.2);color:var(--accent)}
+.preview-status.error{background:rgba(255,92,92,.2);color:var(--danger)}
+
+.photo-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.photo-count{font-size:12px;color:var(--text-muted)}
+.clear-btn{font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+/* UPLOAD PROGRESS */
+.upload-progress{display:none;margin-bottom:12px}
+.upload-progress.visible{display:block}
+.progress-label{font-size:12px;color:var(--text-muted);margin-bottom:6px;display:flex;justify-content:space-between}
+.progress-track{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s;width:0%}
+
+/* UPLOAD BTN */
+.upload-btn{
+  width:100%;padding:16px;
+  font-size:16px;font-weight:900;
+  font-family:'Noto Sans KR',sans-serif;
+  background:var(--accent);color:var(--accent-text);
+  border:none;border-radius:var(--radius-sm);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .15s;
+}
+.upload-btn:active{opacity:.85}
+.upload-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* RESULT CARD */
+.result-card{
+  display:none;
+  background:rgba(200,241,53,.07);border:1px solid rgba(200,241,53,.3);
+  border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;
+  animation:fadeUp .3s ease;
+}
+.result-card.visible{display:block}
+.result-title{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px}
+.result-info{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:12px}
+.result-session{
+  display:inline-block;font-size:12px;font-weight:700;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-xs);padding:6px 12px;color:var(--text);
+  margin-bottom:12px;letter-spacing:.05em;
+}
+.result-thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.result-thumb{width:52px;height:52px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid rgba(200,241,53,.3)}
+.result-next{
+  font-size:13px;color:var(--text-muted);
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-xs);padding:10px 14px;line-height:1.7;
+}
+.result-next strong{color:var(--accent)}
+
+/* SESSIONS LIST */
+.sessions-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;
+}
+.sessions-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sessions-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.sessions-refresh{font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.session-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px;border-radius:var(--radius-xs);
+  background:var(--surface2);border:1px solid var(--border);
+  margin-bottom:6px;cursor:pointer;transition:all .15s;
+}
+.session-item:active{border-color:var(--accent)}
+.session-item-info{flex:1;min-width:0}
+.session-item-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-item-meta{font-size:10px;color:var(--text-dim);margin-top:2px}
+.session-item-count{font-size:11px;color:var(--accent);font-weight:700;flex-shrink:0}
+.session-item-del{font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif;padding:4px;flex-shrink:0}
+.session-item-del:active{color:var(--danger)}
+.sessions-empty{font-size:12px;color:var(--text-dim);text-align:center;padding:1.5rem 0}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:calc(1.5rem + var(--safe-bottom));left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--surface3);border:1px solid var(--border);
+  color:var(--text);font-size:13px;padding:10px 20px;
+  border-radius:20px;opacity:0;transition:all .3s;
+  pointer-events:none;z-index:999;white-space:nowrap;
+  max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-mark">📷</div>
+      <h1>사진 업로드</h1>
+      <p>Blog AI Writer · 모바일 전용</p>
+    </div>
+    <div class="login-field">
+      <label class="login-label">아이디</label>
+      <input class="login-input" type="text" id="loginId" placeholder="아이디" autocomplete="username"/>
+    </div>
+    <div class="login-field">
+      <label class="login-label">비밀번호</label>
+      <input class="login-input" type="password" id="loginPw" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <label class="login-remember">
+      <input type="checkbox" id="rememberMe"/> 로그인 정보 저장
+    </label>
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-logo">📷</div>
+      <span class="nav-title">사진 업로드</span>
+    </div>
+    <div class="nav-right">
+      <a class="pc-link" href="index.html">PC 버전 →</a>
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    </div>
+  </nav>
+
+  <div class="content">
+
+    <!-- 세션 이름 입력 -->
+    <div class="session-card">
+      <div class="session-label">📁 촬영 세션 이름</div>
+      <input type="text" class="session-input" id="sessionName"
+        placeholder="예: 경주카페_250502, 맛집방문_어제"
+        autocomplete="off" autocorrect="off"/>
+      <div class="session-hint">PC에서 이 이름으로 사진을 불러옵니다</div>
+    </div>
+
+    <!-- 업로드 카드 -->
+    <div class="upload-card">
+      <div class="upload-label"><span class="upload-dot"></span>사진 선택 (최대 50장)</div>
+
+      <div class="photo-btns">
+        <button class="photo-btn" onclick="document.getElementById('cameraInput').click()">
+          <span class="btn-icon">📷</span>
+          <span class="btn-label">카메라 촬영</span>
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" multiple style="display:none" onchange="addPhotos(event)"/>
+        </button>
+        <button class="photo-btn" onclick="document.getElementById('galleryInput').click()">
+          <span class="btn-icon">🖼️</span>
+          <span class="btn-label">갤러리 선택</span>
+          <input type="file" id="galleryInput" accept="image/*" multiple style="display:none" onchange="addPhotos(event)"/>
+        </button>
+      </div>
+
+      <div id="previewSection" style="display:none">
+        <div class="photo-meta">
+          <span class="photo-count" id="photoCount">0장 선택됨</span>
+          <button class="clear-btn" onclick="clearPhotos()">전체 삭제</button>
+        </div>
+        <div class="preview-grid" id="previewGrid"></div>
+      </div>
+
+      <div class="upload-progress" id="uploadProgress">
+        <div class="progress-label">
+          <span id="progressLabel">업로드 준비 중...</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <button class="upload-btn" id="uploadBtn" onclick="startUpload()">
+        ☁️ Firebase에 업로드하기
+      </button>
+    </div>
+
+    <!-- 업로드 완료 결과 -->
+    <div class="result-card" id="resultCard">
+      <div class="result-title">✅ 업로드 완료!</div>
+      <div class="result-info">PC에서 아래 세션 이름으로 사진을 불러오세요.</div>
+      <div class="result-session" id="resultSession"></div>
+      <div class="result-thumbs" id="resultThumbs"></div>
+      <div class="result-next">
+        💻 <strong>PC에서 할 일:</strong><br>
+        index.html 접속 → 글 작성 화면에서<br>
+        세션 이름 입력 → 사진 자동 로드 → 글 생성
+      </div>
+    </div>
+
+    <!-- 이전 세션 목록 -->
+    <div class="sessions-card">
+      <div class="sessions-header">
+        <span class="sessions-title">이전 업로드 세션</span>
+        <button class="sessions-refresh" onclick="loadSessions()">새로고침</button>
+      </div>
+      <div id="sessionsList"><div class="sessions-empty">불러오는 중...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════
+// FIREBASE INIT
+// ══════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAtdQ6mj7_6sI42lufTY1A9nqu01SMFEUE",
+  authDomain: "blog-ai-writer-ffc18.firebaseapp.com",
+  projectId: "blog-ai-writer-ffc18",
+  storageBucket: "blog-ai-writer-ffc18.firebasestorage.app",
+  messagingSenderId: "484501953098",
+  appId: "1:484501953098:web:544cc0c3021c25062f64b3"
+};
+firebase.initializeApp(firebaseConfig);
+const db      = firebase.firestore();
+const storage = firebase.storage();
+
+// ══════════════════════════════
+// CONSTANTS
+// ══════════════════════════════
+const CREDS   = { id:'jeong', pw:'qhrmf0413!' };
+const ENC_KEY = 'blog_ai_enc_v1';
+function encode(s){ return btoa(s.split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^ENC_KEY.charCodeAt(i%ENC_KEY.length))).join('')); }
+function decode(s){ try{ return atob(s).split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^ENC_KEY.charCodeAt(i%ENC_KEY.length))).join(''); }catch{return '';} }
+
+let toastTimer;
+function showToast(msg, dur=2800){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+// ══════════════════════════════
+// AUTH
+// ══════════════════════════════
+function initAuth(){
+  const savedId=localStorage.getItem('saved_id');
+  const savedPw=localStorage.getItem('saved_pw');
+  if(savedId&&savedPw){
+    document.getElementById('loginId').value=savedId;
+    document.getElementById('loginPw').value=decode(savedPw);
+    document.getElementById('rememberMe').checked=true;
+  }
+  if(sessionStorage.getItem('logged_in')==='1') showApp();
+}
+
+function doLogin(){
+  const id=document.getElementById('loginId').value.trim();
+  const pw=document.getElementById('loginPw').value;
+  const remember=document.getElementById('rememberMe').checked;
+  if(id===CREDS.id && pw===CREDS.pw){
+    if(remember){ localStorage.setItem('saved_id',id); localStorage.setItem('saved_pw',encode(pw)); }
+    else{ localStorage.removeItem('saved_id'); localStorage.removeItem('saved_pw'); }
+    sessionStorage.setItem('logged_in','1');
+    document.getElementById('loginError').textContent='';
+    showApp();
+  } else {
+    document.getElementById('loginError').textContent='아이디 또는 비밀번호가 올바르지 않습니다.';
+    document.getElementById('loginPw').value='';
+  }
+}
+
+function doLogout(){
+  sessionStorage.removeItem('logged_in');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+function showApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  // 기본 세션 이름: 오늘 날짜
+  const now=new Date();
+  const defaultName=`세션_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('sessionName').value=defaultName;
+  loadSessions();
+}
+
+// ══════════════════════════════
+// PHOTO HANDLING + 압축
+// ══════════════════════════════
+let photoFiles=[];
+
+// ══════════════════════════════
+// 🗜 압축 최적화 (블로그 최적 설정)
+// 목표: 1MB 이하, 최대 1280px, 빠른 압축
+// ══════════════════════════════
+async function compressImage(file){
+  return new Promise((resolve)=>{
+    // HEIC 등 미지원 포맷은 그대로 통과
+    if(!file.type.startsWith('image/')){ resolve(file); return; }
+
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let {width:w, height:h}=img;
+
+      // 블로그 최적: 최대 1280px (속도↑, 품질 충분)
+      const MAX=1280;
+      if(w>MAX||h>MAX){
+        const r=Math.min(MAX/w,MAX/h);
+        w=Math.round(w*r); h=Math.round(h*r);
+      }
+
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      // 흰 배경 (PNG 투명 처리)
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img,0,0,w,h);
+
+      // 1회 압축 (0.78 품질 = 블로그 최적, 반복 없이 빠름)
+      canvas.toBlob(blob=>{
+        if(!blob||blob.size>=file.size){ resolve(file); return; }
+        resolve(new File([blob],
+          file.name.replace(/\.[^.]+$/,'.jpg'),
+          {type:'image/jpeg', lastModified:Date.now()}
+        ));
+      },'image/jpeg', 0.78);
+    };
+
+    img.onerror=()=>{ URL.revokeObjectURL(url); resolve(file); };
+    img.src=url;
+  });
+}
+
+function addPhotos(e){ addFileList(Array.from(e.target.files)); e.target.value=''; }
+
+async function addFileList(files){
+  const rem=MAX_PHOTOS-photoFiles.length;
+  const toAdd=files.slice(0,rem);
+  if(!toAdd.length){ showToast(`최대 ${MAX_PHOTOS}장까지 업로드 가능합니다.`); return; }
+
+  document.getElementById('uploadBtn').disabled=true;
+  showToast(`🗜 빠른 압축 중... (${toAdd.length}장)`);
+
+  // 압축도 병렬로 처리 (훨씬 빠름)
+  const compressed = await Promise.all(
+    toAdd.map(f => f.size < 800*1024 ? Promise.resolve(f) : compressImage(f))
+  );
+
+  photoFiles=[...photoFiles,...compressed];
+  renderPreviews();
+
+  const origTotal=toAdd.reduce((s,f)=>s+f.size,0);
+  const compTotal=compressed.reduce((s,f)=>s+f.size,0);
+  const saved=Math.round((1-compTotal/origTotal)*100);
+  const compMB=(compTotal/1024/1024).toFixed(1);
+  showToast(saved>5
+    ? `✓ 압축 완료! ${saved}% 절약 → 총 ${compMB}MB`
+    : `✓ ${toAdd.length}장 추가됨 (이미 최적 크기)`
+  );
+  document.getElementById('uploadBtn').disabled=false;
+}
+
+function renderPreviews(){
+  const grid=document.getElementById('previewGrid');
+  grid.innerHTML='';
+  photoFiles.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    const sizeKB=Math.round(f.size/1024);
+    const sizeStr=sizeKB>=1000?`${(sizeKB/1024).toFixed(1)}MB`:`${sizeKB}KB`;
+    const div=document.createElement('div'); div.className='preview-item'; div.id=`prev_${i}`;
+    div.innerHTML=`<img src="${url}"><span class="preview-order">${i+1}</span><span class="preview-size">${sizeStr}</span><div class="preview-del" onclick="removePhoto(${i})">×</div>`;
+    grid.appendChild(div);
+  });
+  document.getElementById('previewSection').style.display=photoFiles.length?'block':'none';
+  document.getElementById('photoCount').textContent=`${photoFiles.length}/${MAX_PHOTOS}장 선택됨`;
+}
+
+function removePhoto(i){ photoFiles.splice(i,1); renderPreviews(); }
+function clearPhotos(){ photoFiles=[]; renderPreviews(); document.getElementById('resultCard').classList.remove('visible'); }
+
+// ══════════════════════════════
+// ⚡ 병렬 업로드 (핵심 개선)
+// ══════════════════════════════
+const PARALLEL_LIMIT = 4; // 동시 업로드 수 (모바일 최적)
+const MAX_PHOTOS = 50;    // 최대 업로드 장수
+
+async function startUpload(){
+  if(!photoFiles.length){ showToast('사진을 먼저 선택해주세요.'); return; }
+  const sessionName=document.getElementById('sessionName').value.trim();
+  if(!sessionName){ showToast('세션 이름을 입력해주세요.'); return; }
+
+  const btn=document.getElementById('uploadBtn');
+  const prog=document.getElementById('uploadProgress');
+  const fill=document.getElementById('progressFill');
+  const label=document.getElementById('progressLabel');
+  const pct=document.getElementById('progressPct');
+
+  btn.disabled=true;
+  prog.classList.add('visible');
+  document.getElementById('resultCard').classList.remove('visible');
+
+  const sessionId=sessionName.replace(/[^가-힣a-zA-Z0-9_\-]/g,'_')+'_'+Date.now();
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  const timeStr=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // 진행률 추적 (각 파일별 독립)
+  const progressMap={}; // index → 0~1
+  const urlMap={};      // index → url
+  let doneCount=0;
+
+  function updateProgress(){
+    const total=Object.values(progressMap).reduce((s,v)=>s+v,0);
+    const overall=Math.round((total/photoFiles.length)*100);
+    fill.style.width=overall+'%';
+    pct.textContent=overall+'%';
+    label.textContent=`업로드 중... ${doneCount}/${photoFiles.length}장 완료`;
+  }
+
+  // 썸네일 초기 상태 — ⏳ 표시
+  photoFiles.forEach((_,i)=>{
+    progressMap[i]=0;
+    const prevItem=document.getElementById(`prev_${i}`);
+    if(prevItem&&!prevItem.querySelector('.preview-status')){
+      const s=document.createElement('div');
+      s.className='preview-status uploading'; s.textContent='⏳';
+      prevItem.appendChild(s);
+    }
+  });
+
+  // 단일 파일 업로드 함수
+  async function uploadOne(file, index){
+    const ext='jpg';
+    const storageRef=storage.ref(`photo-sessions/${sessionId}/${String(index).padStart(3,'0')}.${ext}`);
+    return new Promise((res,rej)=>{
+      const task=storageRef.put(file,{contentType:'image/jpeg'});
+      task.on('state_changed',
+        snap=>{
+          progressMap[index]=snap.bytesTransferred/snap.totalBytes;
+          updateProgress();
+        },
+        rej,
+        async()=>{
+          const url=await task.snapshot.ref.getDownloadURL();
+          urlMap[index]=url;
+          doneCount++;
+          progressMap[index]=1;
+          updateProgress();
+          // ✓ 표시
+          const prevItem=document.getElementById(`prev_${index}`);
+          const s=prevItem?.querySelector('.preview-status');
+          if(s){ s.className='preview-status done'; s.textContent='✓'; }
+          res(url);
+        }
+      );
+    });
+  }
+
+  try{
+    const startTime=Date.now();
+
+    // PARALLEL_LIMIT 단위로 나눠서 병렬 업로드
+    const chunks=[];
+    for(let i=0;i<photoFiles.length;i+=PARALLEL_LIMIT){
+      chunks.push(photoFiles.slice(i,i+PARALLEL_LIMIT).map((f,j)=>uploadOne(f,i+j)));
+    }
+    for(const chunk of chunks){
+      await Promise.all(chunk);
+    }
+
+    // 순서 보장 (index 순으로 URL 정렬)
+    const urls=Object.keys(urlMap).sort((a,b)=>+a-+b).map(k=>urlMap[k]);
+    const elapsed=((Date.now()-startTime)/1000).toFixed(1);
+
+    // Firestore에 세션 저장
+    await db.collection('photo_sessions').doc(sessionId).set({
+      sessionName, sessionId,
+      imageUrls: urls,
+      count: urls.length,
+      date: dateStr, time: timeStr,
+      uploadSec: parseFloat(elapsed),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    fill.style.width='100%'; pct.textContent='100%';
+    label.textContent=`✓ ${urls.length}장 완료! (${elapsed}초)`;
+    showUploadResult(sessionName, urls);
+    loadSessions();
+    showToast(`🎉 ${urls.length}장 업로드 완료! ${elapsed}초 걸렸어요.`, 4000);
+
+  }catch(e){
+    showToast('업로드 실패: '+e.message);
+    console.error(e);
+    // 실패한 썸네일 표시
+    photoFiles.forEach((_,i)=>{
+      if(!urlMap[i]){
+        const s=document.getElementById(`prev_${i}`)?.querySelector('.preview-status');
+        if(s){ s.className='preview-status error'; s.textContent='✗'; }
+      }
+    });
+  }
+
+  btn.disabled=false;
+  setTimeout(()=>{ prog.classList.remove('visible'); fill.style.width='0%'; pct.textContent='0%'; },2000);
+}
+
+function showUploadResult(sessionName, urls){
+  document.getElementById('resultSession').textContent=sessionName;
+  const thumbs=document.getElementById('resultThumbs');
+  thumbs.innerHTML=urls.map(u=>`<img class="result-thumb" src="${u}" loading="lazy">`).join('');
+  document.getElementById('resultCard').classList.add('visible');
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ══════════════════════════════
+// SESSION LIST
+// ══════════════════════════════
+async function loadSessions(){
+  const list=document.getElementById('sessionsList');
+  list.innerHTML='<div class="sessions-empty">불러오는 중...</div>';
+  try{
+    const snap=await db.collection('photo_sessions').orderBy('createdAt','desc').limit(20).get();
+    if(snap.empty){ list.innerHTML='<div class="sessions-empty">업로드한 세션이 없어요.</div>'; return; }
+    list.innerHTML=snap.docs.map(d=>{
+      const s=d.data();
+      return `<div class="session-item">
+        <div class="session-item-info">
+          <div class="session-item-name">${escHtml(s.sessionName||s.sessionId)}</div>
+          <div class="session-item-meta">${s.date||''} ${s.time||''}</div>
+        </div>
+        <span class="session-item-count">${s.count||0}장</span>
+        <button class="session-item-del" onclick="deleteSession('${d.id}',event)">삭제</button>
+      </div>`;
+    }).join('');
+  }catch(e){ list.innerHTML='<div class="sessions-empty">불러오기 실패</div>'; }
+}
+
+async function deleteSession(id, e){
+  e.stopPropagation();
+  if(!confirm('이 세션을 삭제할까요?')) return;
+  try{
+    await db.collection('photo_sessions').doc(id).delete();
+    showToast('🗑 삭제되었습니다.');
+    loadSessions();
+  }catch(err){ showToast('삭제 실패: '+err.message); }
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// BOOT
+initAuth();
+</script>
+</body>
+</html>
