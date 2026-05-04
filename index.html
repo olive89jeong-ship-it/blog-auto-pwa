@@ -11,15 +11,7 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet"/>
-
-<!-- JSZip for bulk image download -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
-<!-- Firebase SDK (compat version — works without bundler/CORS issues) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
-
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -27,7 +19,7 @@
   --border:#2e2e2e;--border-hover:#444;
   --text:#f0f0ee;--text-muted:#888;--text-dim:#555;
   --accent:#c8f135;--accent-dark:#a8cc1a;--accent-text:#0f0f0f;
-  --danger:#ff5c5c;--success:#4ade80;--info:#60a5fa;
+  --danger:#ff5c5c;--success:#4ade80;
   --sidebar-w:290px;
   --radius:14px;--radius-sm:9px;--radius-xs:6px;
   --safe-top:env(safe-area-inset-top,0px);
@@ -50,7 +42,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,241,53,.1)}
 .login-remember{display:flex;align-items:center;gap:8px;margin-bottom:20px;cursor:pointer;font-size:13px;color:var(--text-muted)}
 .login-remember input{width:16px;height:16px;accent-color:var(--accent)}
-.login-btn{width:100%;padding:14px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s}
+.login-btn{width:100%;padding:14px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);cursor:pointer}
 .login-btn:hover{background:var(--accent-dark)}
 .login-error{font-size:12px;color:var(--danger);text-align:center;margin-top:10px;min-height:18px}
 
@@ -61,14 +53,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 /* ══ SIDEBAR ══ */
 .sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
 .sidebar-header{padding:1.25rem;border-bottom:1px solid var(--border);flex-shrink:0}
-.sidebar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.sidebar-title{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
-.sidebar-sync{font-size:10px;color:var(--text-dim);display:flex;align-items:center;gap:5px}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-dim);flex-shrink:0;transition:background .3s}
-.sync-dot.ok{background:var(--success)}
-.sync-dot.loading{background:var(--info);animation:pulse 1s infinite}
-.sync-dot.error{background:var(--danger)}
-.sidebar-count{font-size:11px;color:var(--text-dim);margin-top:2px}
+.sidebar-title{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px}
+.sidebar-count{font-size:11px;color:var(--text-dim)}
 .sidebar-list{flex:1;overflow-y:auto;padding:.5rem}
 .sidebar-empty{padding:2rem 1rem;text-align:center;font-size:12px;color:var(--text-dim);line-height:1.8}
 .blog-item{padding:10px 12px;border-radius:var(--radius-xs);border:1px solid transparent;cursor:pointer;margin-bottom:4px;transition:all .15s}
@@ -77,11 +63,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .blog-item-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .blog-item-meta{display:flex;justify-content:space-between;align-items:center}
 .blog-item-date{font-size:10px;color:var(--text-dim)}
-.blog-item-del{font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:3px;font-family:'Noto Sans KR',sans-serif;transition:color .12s}
+.blog-item-del{font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:3px;font-family:'Noto Sans KR',sans-serif}
 .blog-item-del:hover{color:var(--danger)}
-.blog-item-imgs{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
-.blog-item-thumb{width:30px;height:30px;object-fit:cover;border-radius:3px;border:1px solid var(--border)}
-
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;backdrop-filter:blur(4px)}
 .sidebar-overlay.visible{display:block}
 
@@ -90,18 +73,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .nav{display:flex;align-items:center;justify-content:space-between;padding:calc(.875rem + var(--safe-top)) 1.25rem .875rem;border-bottom:1px solid var(--border);background:rgba(15,15,15,.95);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100}
 .nav-left{display:flex;align-items:center;gap:10px}
 .sidebar-toggle{background:none;border:1px solid var(--border);border-radius:var(--radius-xs);padding:6px 10px;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1;display:none;transition:all .15s}
-.sidebar-toggle:hover{border-color:var(--border-hover);color:var(--text)}
 .nav-logo{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--accent-text)}
 .nav-title{font-size:15px;font-weight:700;letter-spacing:-.02em}
 .nav-right{display:flex;align-items:center;gap:8px}
 .nav-user{font-size:11px;color:var(--text-muted);padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px}
 .logout-btn{font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif;padding:4px}
-
-/* CONTENT */
 .content{max-width:700px;margin:0 auto;padding:1.5rem 1rem calc(6.5rem + var(--safe-bottom))}
+
+/* HERO */
 .hero{text-align:center;margin-bottom:2rem}
 .hero-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--accent);border:1px solid var(--accent);padding:4px 12px;border-radius:20px;margin-bottom:12px;text-transform:uppercase}
-.hero h2{font-size:clamp(20px,5vw,34px);font-weight:900;letter-spacing:-.03em;line-height:1.2;margin-bottom:8px}
+.hero h2{font-size:clamp(20px,5vw,32px);font-weight:900;letter-spacing:-.03em;line-height:1.2;margin-bottom:8px}
 .hero h2 em{color:var(--accent);font-style:normal}
 .hero p{font-size:13px;color:var(--text-muted)}
 
@@ -116,6 +98,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .api-saved-info{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm)}
 .api-saved-text{font-size:12px;color:var(--success)}
 .api-change-btn{font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.hint{font-size:11px;color:var(--text-dim);margin-top:6px}
+.hint a{color:var(--accent);text-decoration:none}
 
 /* CARDS */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
@@ -125,8 +109,6 @@ input[type=text],textarea,select{width:100%;background:var(--surface2);border:1p
 input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,241,53,.1)}
 textarea{resize:vertical;line-height:1.7;min-height:80px}
 select option{background:var(--surface2)}
-.hint{font-size:11px;color:var(--text-dim);margin-top:6px}
-.hint a{color:var(--accent);text-decoration:none}
 
 /* PHOTO */
 .drop-zone{border:1.5px dashed var(--border-hover);border-radius:var(--radius-sm);padding:1.5rem;text-align:center;cursor:pointer;background:var(--surface2);transition:all .2s;position:relative;overflow:hidden}
@@ -142,66 +124,18 @@ select option{background:var(--surface2)}
 .thumb-wrap{position:relative;width:76px;height:76px;animation:popIn .2s ease}
 .thumb-wrap img{width:76px;height:76px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid var(--border)}
 .thumb-order{position:absolute;bottom:3px;left:3px;font-size:9px;font-weight:700;background:rgba(0,0,0,.75);color:#fff;padding:1px 5px;border-radius:3px}
-.thumb-size{position:absolute;bottom:3px;right:3px;font-size:8px;font-weight:700;background:rgba(200,241,53,.85);color:#0f0f0f;padding:1px 4px;border-radius:3px}
+.thumb-size{position:absolute;bottom:3px;right:3px;font-size:8px;font-weight:700;background:rgba(200,241,53,.9);color:#0f0f0f;padding:1px 4px;border-radius:3px}
 .thumb-del{position:absolute;top:-5px;right:-5px;width:20px;height:20px;background:var(--danger);color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg)}
-
 .photo-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
 .photo-count{font-size:12px;color:var(--text-muted)}
 .clear-btn{font-size:11px;color:var(--danger);cursor:pointer;background:none;border:none;font-family:'Noto Sans KR',sans-serif}
 
-/* UPLOAD PROGRESS */
-.upload-bar-wrap{display:none;margin-top:10px}
-.upload-bar-wrap.visible{display:block}
-.upload-bar-label{font-size:11px;color:var(--text-muted);margin-bottom:5px}
-.upload-bar-track{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
-.upload-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;width:0%}
-
-/* FIREBASE IMAGE DOWNLOAD PANEL */
-.fb-images-section{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
-.fb-images-section.visible{display:block}
-.fb-images-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
-.fb-images-label{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px}
-.fb-zip-btn{font-size:11px;font-weight:700;padding:5px 12px;background:var(--accent);color:var(--accent-text);border:none;border-radius:20px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:4px;white-space:nowrap}
-.fb-zip-btn:hover{background:var(--accent-dark)}
-.fb-zip-btn:disabled{opacity:.5;cursor:not-allowed}
-.fb-images-grid{display:flex;flex-wrap:wrap;gap:8px}
-.fb-img-item{display:flex;flex-direction:column;align-items:center;gap:4px;width:76px}
-.fb-img-item img{width:76px;height:76px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid var(--border)}
-.fb-img-name{font-size:9px;color:var(--text-dim);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:76px}
-.fb-img-dl{width:100%;padding:4px 0;font-size:10px;font-weight:700;color:var(--accent);background:rgba(200,241,53,.08);border:1px solid rgba(200,241,53,.25);border-radius:4px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;text-align:center}
-.fb-img-dl:hover{background:rgba(200,241,53,.15)}
-
-/* NAVER COPY MODAL */
-.naver-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem}
-.naver-modal-bg.visible{display:flex}
-.naver-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:560px;max-height:80vh;display:flex;flex-direction:column}
-.naver-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0}
-.naver-modal-title{font-size:14px;font-weight:700}
-.naver-modal-close{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px}
-.naver-modal-body{padding:1rem 1.25rem;overflow-y:auto;flex:1}
-.naver-guide{font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:12px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-xs)}
-.naver-guide strong{color:var(--accent)}
-.naver-text-box{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:13px;line-height:1.8;color:var(--text);font-family:'Noto Sans KR',sans-serif;resize:none;height:240px;outline:none}
-.naver-modal-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
-.naver-copy-btn{flex:1;padding:11px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);cursor:pointer}
-.naver-copy-btn:hover{background:var(--accent-dark)}
-.naver-close-btn{padding:11px 16px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer}
-
+/* SETTINGS */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .tag{font-size:12px;padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;user-select:none;transition:all .12s;font-family:'Noto Sans KR',sans-serif}
 .tag.active{background:rgba(200,241,53,.12);border-color:var(--accent);color:var(--accent);font-weight:500}
 .divider{border:none;border-top:1px solid var(--border);margin:14px 0}
-
-/* SESSION LOAD (PC) */
-.session-load-row{display:flex;gap:8px;margin-bottom:8px}
-.session-load-row select{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:'Noto Sans KR',sans-serif;color:var(--text);outline:none;-webkit-appearance:none}
-.session-load-row select:focus{border-color:var(--accent)}
-.session-load-btn{padding:10px 16px;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.session-loaded-info{font-size:12px;color:var(--success);margin-bottom:8px;display:flex;align-items:center}
-.session-loaded-thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.session-loaded-thumb{width:56px;height:56px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid rgba(200,241,53,.3)}
-
 .web-search-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);gap:12px}
 .web-search-info h4{font-size:13px;font-weight:700;margin-bottom:2px}
 .web-search-info p{font-size:11px;color:var(--text-muted)}
@@ -212,7 +146,7 @@ select option{background:var(--surface2)}
 .toggle input:checked+.toggle-slider{background:rgba(200,241,53,.15);border-color:var(--accent)}
 .toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--accent)}
 
-/* GENERATE BTN */
+/* GEN BTN */
 .gen-wrap{position:fixed;bottom:0;left:0;right:0;padding:.875rem 1rem calc(.875rem + var(--safe-bottom));background:rgba(15,15,15,.95);backdrop-filter:blur(16px);border-top:1px solid var(--border);z-index:50}
 .gen-wrap-inner{max-width:700px;margin:0 auto}
 .generate-btn{width:100%;padding:15px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s}
@@ -229,21 +163,38 @@ select option{background:var(--surface2)}
 .spinner-sm{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 .step-check{color:var(--accent);font-size:13px}
 .step-pending{color:var(--text-dim);font-size:13px}
+.step-label{flex:1}
+.step-sub{font-size:11px;color:var(--text-dim);margin-top:2px}
 
 /* OUTPUT */
 .output-wrap{display:none;margin-bottom:1rem}
 .output-wrap.visible{display:block}
 .output-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
-.output-meta{display:flex;align-items:center;gap:8px}
+.output-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .output-title{font-size:13px;font-weight:700;color:var(--text-muted)}
 .char-badge{font-size:11px;padding:2px 8px;background:rgba(200,241,53,.12);border:1px solid rgba(200,241,53,.3);color:var(--accent);border-radius:20px;font-weight:700}
+.search-badge{font-size:11px;padding:2px 8px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);color:#60a5fa;border-radius:20px}
 .output-actions{display:flex;gap:6px;flex-wrap:wrap}
 .act-btn{font-size:12px;padding:7px 13px;border:1px solid var(--border);border-radius:var(--radius-xs);cursor:pointer;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;transition:all .12s}
 .act-btn:hover{border-color:var(--border-hover);color:var(--text)}
 .act-btn.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent);font-weight:700}
-.search-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.search-chip{font-size:11px;padding:3px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-muted)}
-.output-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;font-size:14px;line-height:1.95;color:var(--text);white-space:pre-wrap;max-height:560px;overflow-y:auto}
+.act-btn.naver{background:rgba(3,199,90,.1);border-color:rgba(3,199,90,.4);color:#03c75a;font-weight:700}
+.output-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;font-size:14px;line-height:1.95;color:var(--text);white-space:pre-wrap;max-height:600px;overflow-y:auto}
+
+/* NAVER MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem}
+.modal-bg.visible{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:580px;max-height:85vh;display:flex;flex-direction:column}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0}
+.modal-title{font-size:14px;font-weight:700}
+.modal-close{background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;padding:0 4px}
+.modal-body{padding:1rem 1.25rem;overflow-y:auto;flex:1}
+.naver-guide{font-size:12px;color:var(--text-muted);line-height:1.75;margin-bottom:12px;padding:10px 14px;background:var(--surface2);border-radius:var(--radius-xs);border-left:3px solid var(--accent)}
+.naver-guide strong{color:var(--accent)}
+.naver-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13px;line-height:1.85;color:var(--text);font-family:'Noto Sans KR',sans-serif;resize:none;height:260px;outline:none}
+.modal-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.modal-copy-btn{flex:1;padding:12px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;background:var(--accent);color:var(--accent-text);border:none;border-radius:var(--radius-sm);cursor:pointer}
+.modal-close-btn{padding:12px 18px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer}
 
 /* TOAST */
 .toast{position:fixed;bottom:calc(5.5rem + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px 20px;border-radius:20px;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;max-width:90vw;text-align:center}
@@ -252,11 +203,7 @@ select option{background:var(--surface2)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:var(--surface)}
-::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:2px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:2px}
 
 @media(max-width:768px){
   .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:210;transform:translateX(-100%);transition:transform .3s ease}
@@ -272,7 +219,7 @@ select option{background:var(--surface2)}
 </head>
 <body>
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <div class="login-logo">
@@ -287,33 +234,24 @@ select option{background:var(--surface2)}
       <label class="login-label">비밀번호</label>
       <input class="login-input" type="password" id="loginPw" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
-    <label class="login-remember">
-      <input type="checkbox" id="rememberMe"/> 로그인 정보 저장
-    </label>
+    <label class="login-remember"><input type="checkbox" id="rememberMe"/> 로그인 정보 저장</label>
     <button class="login-btn" onclick="doLogin()">로그인</button>
     <div class="login-error" id="loginError"></div>
   </div>
 </div>
 
-<!-- ══ APP ══ -->
+<!-- APP -->
 <div class="app" id="app">
-
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-top">
-        <span class="sidebar-title">작성한 글</span>
-        <span class="sidebar-sync">
-          <span class="sync-dot" id="syncDot"></span>
-          <span id="syncText">연결 중...</span>
-        </span>
-      </div>
+      <div class="sidebar-title">작성한 글</div>
       <div class="sidebar-count" id="sidebarCount">0개</div>
     </div>
     <div class="sidebar-list" id="sidebarList">
-      <div class="sidebar-empty">연결 중...</div>
+      <div class="sidebar-empty">아직 작성한 글이 없어요.</div>
     </div>
   </div>
 
@@ -333,9 +271,9 @@ select option{background:var(--surface2)}
 
     <div class="content">
       <div class="hero">
-        <div class="hero-tag">☁️ Firebase Sync</div>
-        <h2>한 줄로 완성하는<br><em>네이버 블로그</em></h2>
-        <p>PC · 모바일 실시간 동기화 · 이미지 클라우드 저장</p>
+        <div class="hero-tag">웹서칭 20개 · 정보성 강화</div>
+        <h2>진짜 정보가 담긴<br><em>네이버 블로그</em></h2>
+        <p>실제 주소 · 가격 · 영업시간 · 후기까지 자동 수집해서 작성</p>
       </div>
 
       <!-- API KEY -->
@@ -360,40 +298,26 @@ select option{background:var(--surface2)}
       <!-- KEYWORD -->
       <div class="card">
         <div class="field-label"><span class="dot"></span>키워드 / 주제</div>
-        <input type="text" id="keyword" placeholder="예: 경주 황리단길 카페 추천 솔직 후기" autocomplete="off"/>
+        <input type="text" id="keyword" placeholder="예: 경주 황리단길 카페 추천" autocomplete="off"/>
+        <p class="hint" style="margin-top:6px">구체적일수록 좋아요. 예: "서울 성수동 브런치카페", "제주 애월 흑돼지 맛집"</p>
       </div>
 
-      <!-- PHOTOS -->
+      <!-- 추가 정보 -->
       <div class="card">
-        <div class="field-label"><span class="dot"></span>사진
-          <span style="color:var(--text-dim);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none">직접 업로드 또는 모바일 세션 불러오기</span>
-        </div>
+        <div class="field-label"><span class="dot"></span>추가 정보 입력 <span style="color:var(--text-dim);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none">(알고 있는 정보 직접 입력)</span></div>
+        <textarea id="extraInfo" rows="4" placeholder="예: 주소: 경주시 포석로 000&#10;영업시간: 10:00~22:00&#10;가격: 아메리카노 5,500원&#10;주차: 건물 뒤 무료주차 가능&#10;특이사항: 반려동물 동반 가능, 웨이팅 있음"></textarea>
+        <p class="hint" style="margin-top:6px">✅ 직접 입력한 정보가 우선 반영됩니다. 없으면 AI가 웹서칭으로 수집합니다.</p>
+      </div>
 
-        <!-- 모바일 세션 불러오기 (PC 전용) -->
-        <div id="sessionLoadArea">
-          <div class="session-load-row">
-            <select id="sessionSelect" onchange="onSessionSelectChange()">
-              <option value="">📱 모바일에서 올린 세션 선택...</option>
-            </select>
-            <button class="session-load-btn" id="sessionLoadBtn" onclick="loadSessionImages()" style="display:none">불러오기</button>
-          </div>
-          <div class="session-loaded-info" id="sessionLoadedInfo" style="display:none">
-            <span id="sessionLoadedText"></span>
-            <button onclick="clearSessionImages()" style="background:none;border:none;color:var(--danger);font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-left:8px">해제</button>
-          </div>
-          <div class="session-loaded-thumbs" id="sessionLoadedThumbs"></div>
-          <div class="divider" style="margin:12px 0"></div>
-        </div>
-
-        <!-- PC 드래그앤드롭 -->
+      <!-- 사진 -->
+      <div class="card">
+        <div class="field-label"><span class="dot"></span>사진 업로드 <span style="color:var(--text-dim);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none">선택사항 · 최대 20장</span></div>
         <div class="drop-zone" id="dropZone">
           <input type="file" id="photoInputDesk" accept="image/*" multiple onchange="addPhotos(event)"/>
           <span class="drop-icon">🖼️</span>
           <div class="drop-title">드래그하거나 클릭해서 추가</div>
-          <div class="drop-sub">JPG, PNG · 자동 압축(최대 1.2MB) · 직접 업로드</div>
+          <div class="drop-sub">JPG, PNG · 사진 내용을 글에 자동 반영</div>
         </div>
-
-        <!-- 모바일 버튼 -->
         <div class="photo-source-row" id="mobilePhotoRow">
           <button class="photo-source-btn" onclick="document.getElementById('cameraInput').click()">
             📷 카메라
@@ -404,24 +328,10 @@ select option{background:var(--surface2)}
             <input type="file" id="galleryInput" accept="image/*" multiple style="display:none" onchange="addPhotos(event)"/>
           </button>
         </div>
-
         <div class="photo-preview" id="photoPreview"></div>
         <div class="photo-meta" id="photoMeta" style="display:none">
           <span class="photo-count" id="photoCount"></span>
           <button class="clear-btn" onclick="clearPhotos()">전체 삭제</button>
-        </div>
-        <div class="upload-bar-wrap" id="uploadBarWrap">
-          <div class="upload-bar-label" id="uploadBarLabel">업로드 중...</div>
-          <div class="upload-bar-track"><div class="upload-bar-fill" id="uploadBarFill"></div></div>
-        </div>
-
-        <!-- Firebase 저장 이미지 (블로그 글 조회 시) -->
-        <div class="fb-images-section" id="fbImagesSection">
-          <div class="fb-images-header">
-            <div class="fb-images-label">☁️ Firebase 저장 이미지</div>
-            <button class="fb-zip-btn" id="zipBtn" onclick="downloadAllImagesZip()">⬇ 전체 ZIP 다운로드</button>
-          </div>
-          <div class="fb-images-grid" id="fbImagesGrid"></div>
         </div>
       </div>
 
@@ -430,8 +340,8 @@ select option{background:var(--surface2)}
         <div class="field-label"><span class="dot"></span>글 설정</div>
         <div class="web-search-row">
           <div class="web-search-info">
-            <h4>🔍 웹 서칭 학습</h4>
-            <p>관련 글 5개 검색 후 정보 학습 → 정보성 강화</p>
+            <h4>🔍 웹서칭 20개 정보 수집</h4>
+            <p>실제 주소·가격·영업시간·후기를 수집해서 정보성 강화</p>
           </div>
           <label class="toggle"><input type="checkbox" id="webSearchToggle" checked/><span class="toggle-slider"></span></label>
         </div>
@@ -448,7 +358,7 @@ select option{background:var(--surface2)}
           <div>
             <div class="field-label" style="margin-bottom:6px">글 분량</div>
             <select id="length">
-              <option value="medium">표준 (2,000~2,500자) ← 권장</option>
+              <option value="medium">표준 (2,000~2,500자)</option>
               <option value="long">길게 (3,000자 이상)</option>
               <option value="short">짧게 (1,500~2,000자)</option>
             </select>
@@ -468,26 +378,19 @@ select option{background:var(--surface2)}
           <span class="tag active" onclick="this.classList.toggle('active')">키워드 반복</span>
           <span class="tag active" onclick="this.classList.toggle('active')">해시태그</span>
           <span class="tag active" onclick="this.classList.toggle('active')">소제목 구분</span>
+          <span class="tag active" onclick="this.classList.toggle('active')">장소 정보</span>
+          <span class="tag active" onclick="this.classList.toggle('active')">가격 정보</span>
           <span class="tag" onclick="this.classList.toggle('active')">CTA 포함</span>
-          <span class="tag" onclick="this.classList.toggle('active')">장소 정보</span>
-          <span class="tag" onclick="this.classList.toggle('active')">가격 정보</span>
         </div>
-      </div>
-
-      <!-- EXTRA -->
-      <div class="card">
-        <div class="field-label"><span class="dot"></span>추가 정보 (선택)</div>
-        <textarea id="extraInfo" rows="3" placeholder="방문 날짜, 가격, 특이사항, 강조할 내용 등 자유롭게 적어주세요."></textarea>
       </div>
 
       <!-- PROGRESS -->
       <div class="progress-wrap" id="progressWrap">
         <div class="progress-steps">
-          <div class="step-item" id="step1"><div class="step-icon"><span class="step-pending">○</span></div><span>키워드 분석 중...</span></div>
-          <div class="step-item" id="step2"><div class="step-icon"><span class="step-pending">○</span></div><span>관련 글 5개 웹 서칭 중...</span></div>
-          <div class="step-item" id="step3"><div class="step-icon"><span class="step-pending">○</span></div><span>수집 정보 학습 중...</span></div>
-          <div class="step-item" id="step4"><div class="step-icon"><span class="step-pending">○</span></div><span>블로그 글 작성 중...</span></div>
-          <div class="step-item" id="step5"><div class="step-icon"><span class="step-pending">○</span></div><span>Firebase에 저장 중...</span></div>
+          <div class="step-item" id="step1"><div class="step-icon"><span class="step-pending">○</span></div><div class="step-label">키워드 분석 중...</div></div>
+          <div class="step-item" id="step2"><div class="step-icon"><span class="step-pending">○</span></div><div><div class="step-label">웹서칭 정보 수집 중...</div><div class="step-sub" id="step2sub"></div></div></div>
+          <div class="step-item" id="step3"><div class="step-icon"><span class="step-pending">○</span></div><div class="step-label">핵심 정보 추출 및 정리 중...</div></div>
+          <div class="step-item" id="step4"><div class="step-icon"><span class="step-pending">○</span></div><div class="step-label">블로그 글 작성 중...</div></div>
         </div>
       </div>
 
@@ -497,24 +400,22 @@ select option{background:var(--surface2)}
           <div class="output-meta">
             <span class="output-title">완성된 블로그 글</span>
             <span class="char-badge" id="charBadge"></span>
+            <span class="search-badge" id="searchBadge" style="display:none"></span>
           </div>
           <div class="output-actions">
             <button class="act-btn" onclick="copyOutput()">복사</button>
-            <button class="act-btn" onclick="openNaverModal()" style="border-color:rgba(3,199,90,.4);color:#03c75a">N 네이버 복사</button>
-            <button class="act-btn" onclick="shareOutput()">공유</button>
+            <button class="act-btn naver" onclick="openNaverModal()">N 네이버 복사</button>
             <button class="act-btn" onclick="downloadOutput()">저장</button>
             <button class="act-btn primary" onclick="resetOutput()">다시 쓰기</button>
           </div>
         </div>
-        <div class="search-chips" id="searchChips"></div>
         <div class="output-box" id="outputBox"></div>
       </div>
+    </div>
+  </div>
+</div>
 
-    </div><!-- /content -->
-  </div><!-- /main-area -->
-</div><!-- /app -->
-
-<!-- STICKY BTN -->
+<!-- GEN BTN -->
 <div class="gen-wrap" id="genWrap" style="display:none">
   <div class="gen-wrap-inner">
     <button class="generate-btn" id="genBtn" onclick="generateBlog()">
@@ -523,28 +424,27 @@ select option{background:var(--surface2)}
   </div>
 </div>
 
-<!-- NAVER COPY MODAL -->
-<div class="naver-modal-bg" id="naverModalBg" onclick="closeNaverModal(event)">
-  <div class="naver-modal">
-    <div class="naver-modal-header">
-      <span class="naver-modal-title">N 네이버 블로그 최적화 복사</span>
-      <button class="naver-modal-close" onclick="closeNaverModal()">×</button>
+<!-- NAVER MODAL -->
+<div class="modal-bg" id="naverModalBg" onclick="if(event.target===this)closeNaverModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">N 네이버 블로그 최적화 복사</span>
+      <button class="modal-close" onclick="closeNaverModal()">×</button>
     </div>
-    <div class="naver-modal-body">
+    <div class="modal-body">
       <div class="naver-guide">
         <strong>사용 방법</strong><br>
-        1. 아래 텍스트를 전체 복사<br>
+        1. 아래 "전체 복사" 클릭<br>
         2. 네이버 블로그 에디터 열기<br>
-        3. 에디터에서 붙여넣기 (Ctrl+V / Cmd+V)<br>
-        4. <strong>[사진1]</strong> 위치에 직접 이미지 삽입<br>
-        <br>
-        ✅ 소제목 · 줄바꿈 · 해시태그가 네이버에 최적화되었습니다.
+        3. Ctrl+V (또는 Cmd+V) 로 붙여넣기<br>
+        4. <strong>[사진1]</strong> 위치에 직접 이미지 삽입<br><br>
+        ✅ 소제목·줄바꿈·해시태그가 네이버 에디터에 최적화되어 있습니다.
       </div>
-      <textarea class="naver-text-box" id="naverTextBox" readonly onclick="this.select()"></textarea>
+      <textarea class="naver-textarea" id="naverTextarea" readonly onclick="this.select()"></textarea>
     </div>
-    <div class="naver-modal-footer">
-      <button class="naver-copy-btn" onclick="copyNaverText()">📋 전체 복사</button>
-      <button class="naver-close-btn" onclick="closeNaverModal()">닫기</button>
+    <div class="modal-footer">
+      <button class="modal-copy-btn" onclick="copyNaverText()">📋 전체 복사</button>
+      <button class="modal-close-btn" onclick="closeNaverModal()">닫기</button>
     </div>
   </div>
 </div>
@@ -553,38 +453,21 @@ select option{background:var(--surface2)}
 
 <script>
 // ══════════════════════════════════════════
-// FIREBASE INIT (compat SDK — no bundler needed)
-// ══════════════════════════════════════════
-const firebaseConfig = {
-  apiKey: "AIzaSyAtdQ6mj7_6sI42lufTY1A9nqu01SMFEUE",
-  authDomain: "blog-ai-writer-ffc18.firebaseapp.com",
-  projectId: "blog-ai-writer-ffc18",
-  storageBucket: "blog-ai-writer-ffc18.firebasestorage.app",
-  messagingSenderId: "484501953098",
-  appId: "1:484501953098:web:544cc0c3021c25062f64b3",
-  measurementId: "G-EE0ZV6N5Z0"
-};
-firebase.initializeApp(firebaseConfig);
-const db      = firebase.firestore();
-const storage = firebase.storage();
-
-// ══════════════════════════════════════════
 // CONSTANTS & HELPERS
 // ══════════════════════════════════════════
-const CREDS  = { id:'jeong', pw:'qhrmf0413!' };
+const CREDS   = {id:'jeong', pw:'qhrmf0413!'};
 const ENC_KEY = 'blog_ai_enc_v1';
-
 function encode(s){ return btoa(s.split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^ENC_KEY.charCodeAt(i%ENC_KEY.length))).join('')); }
-function decode(s){ try{ return atob(s).split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^ENC_KEY.charCodeAt(i%ENC_KEY.length))).join(''); }catch{return '';} }
+function decode(s){ try{return atob(s).split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^ENC_KEY.charCodeAt(i%ENC_KEY.length))).join('');}catch{return '';} }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 let toastTimer;
-function showToast(msg, dur=2800){
+function showToast(msg,dur=2800){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove('show'), dur);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),dur);
 }
 
 // ══════════════════════════════════════════
@@ -593,21 +476,16 @@ function showToast(msg, dur=2800){
 function initAuth(){
   const savedId=localStorage.getItem('saved_id');
   const savedPw=localStorage.getItem('saved_pw');
-  if(savedId&&savedPw){
-    document.getElementById('loginId').value=savedId;
-    document.getElementById('loginPw').value=decode(savedPw);
-    document.getElementById('rememberMe').checked=true;
-  }
+  if(savedId&&savedPw){ document.getElementById('loginId').value=savedId; document.getElementById('loginPw').value=decode(savedPw); document.getElementById('rememberMe').checked=true; }
   if(sessionStorage.getItem('logged_in')==='1') showApp();
 }
-
 function doLogin(){
   const id=document.getElementById('loginId').value.trim();
   const pw=document.getElementById('loginPw').value;
   const remember=document.getElementById('rememberMe').checked;
-  if(id===CREDS.id && pw===CREDS.pw){
-    if(remember){ localStorage.setItem('saved_id',id); localStorage.setItem('saved_pw',encode(pw)); }
-    else{ localStorage.removeItem('saved_id'); localStorage.removeItem('saved_pw'); }
+  if(id===CREDS.id&&pw===CREDS.pw){
+    if(remember){localStorage.setItem('saved_id',id);localStorage.setItem('saved_pw',encode(pw));}
+    else{localStorage.removeItem('saved_id');localStorage.removeItem('saved_pw');}
     sessionStorage.setItem('logged_in','1');
     document.getElementById('loginError').textContent='';
     showApp();
@@ -616,699 +494,90 @@ function doLogin(){
     document.getElementById('loginPw').value='';
   }
 }
-
 function doLogout(){
   sessionStorage.removeItem('logged_in');
-  if(window._fbUnsub) window._fbUnsub();
   document.getElementById('app').classList.remove('visible');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('genWrap').style.display='none';
+}
+function showApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('genWrap').style.display='block';
+  initApiKey();
+  loadBlogList();
+  initMobileDetect();
 }
 
 // ══════════════════════════════════════════
 // API KEY
 // ══════════════════════════════════════════
 function initApiKey(){
-  if(localStorage.getItem('enc_api_key')){
-    document.getElementById('apiInputArea').style.display='none';
-    document.getElementById('apiSavedArea').style.display='block';
-  }
+  if(localStorage.getItem('enc_api_key')){ document.getElementById('apiInputArea').style.display='none'; document.getElementById('apiSavedArea').style.display='block'; }
 }
 function saveApiKey(){
   const k=document.getElementById('apiKeyInput').value.trim();
   if(!k||!k.startsWith('sk-')){ showToast('올바른 API 키를 입력해주세요 (sk-로 시작)'); return; }
-  localStorage.setItem('enc_api_key', encode(k));
+  localStorage.setItem('enc_api_key',encode(k));
   document.getElementById('apiKeyInput').value='';
   document.getElementById('apiInputArea').style.display='none';
   document.getElementById('apiSavedArea').style.display='block';
-  showToast('✓ API 키가 암호화 저장되었습니다.');
+  showToast('✓ API 키 저장됨');
 }
-function changeApiKey(){
-  localStorage.removeItem('enc_api_key');
-  document.getElementById('apiSavedArea').style.display='none';
-  document.getElementById('apiInputArea').style.display='block';
-}
+function changeApiKey(){ localStorage.removeItem('enc_api_key'); document.getElementById('apiSavedArea').style.display='none'; document.getElementById('apiInputArea').style.display='block'; }
 function getApiKey(){ const e=localStorage.getItem('enc_api_key'); return e?decode(e):''; }
 
 // ══════════════════════════════════════════
-// SIDEBAR & REAL-TIME FIRESTORE SYNC
+// BLOG LIST (localStorage)
 // ══════════════════════════════════════════
-let currentDocId = null;
-
-function setSyncStatus(state){
-  const dot=document.getElementById('syncDot');
-  const txt=document.getElementById('syncText');
-  dot.className='sync-dot';
-  if(state==='ok'){ dot.classList.add('ok'); txt.textContent='실시간 동기화'; }
-  else if(state==='loading'){ dot.classList.add('loading'); txt.textContent='연결 중...'; }
-  else{ dot.classList.add('error'); txt.textContent='연결 오류'; }
+let blogList=[], currentBlogId=null;
+function loadBlogList(){ try{blogList=JSON.parse(localStorage.getItem('blog_list')||'[]');}catch{blogList=[];} renderSidebar(); }
+function saveBlogList(){ localStorage.setItem('blog_list',JSON.stringify(blogList)); }
+function saveBlogPost(keyword,content){
+  const id=Date.now().toString();
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  const timeStr=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  blogList.unshift({id,keyword,content,date:dateStr,time:timeStr});
+  if(blogList.length>100) blogList=blogList.slice(0,100);
+  saveBlogList(); currentBlogId=id; renderSidebar();
 }
-
-function startRealtimeSync(){
-  setSyncStatus('loading');
-  window._fbUnsub = db.collection('blog_posts')
-    .orderBy('createdAt','desc')
-    .onSnapshot(
-      snap => {
-        setSyncStatus('ok');
-        renderSidebar(snap.docs.map(d=>({id:d.id,...d.data()})));
-      },
-      err => { setSyncStatus('error'); console.error('Firestore error:',err); }
-    );
-}
-
-// ══════════════════════════════════════════
-// 📱 모바일 세션 → PC 연동
-// ══════════════════════════════════════════
-let sessionImageUrls = [];
-
-async function loadPhotoSessions(){
-  const sel=document.getElementById('sessionSelect');
-  if(!sel) return;
-  try{
-    const snap=await db.collection('photo_sessions').orderBy('createdAt','desc').limit(30).get();
-    sel.innerHTML='<option value="">📱 모바일 세션 선택...</option>';
-    if(snap.empty){
-      sel.innerHTML+='<option disabled>아직 업로드된 세션 없음 (upload.html에서 먼저 올리기)</option>';
-      return;
-    }
-    snap.docs.forEach(d=>{
-      const s=d.data();
-      const opt=document.createElement('option');
-      opt.value=d.id;
-      opt.textContent=`${s.sessionName||d.id}  (${s.count||0}장 · ${s.date||''} ${s.time||''})`;
-      sel.appendChild(opt);
-    });
-  }catch(e){ console.error('세션 목록 로드 실패',e); }
-}
-
-function onSessionSelectChange(){
-  const sel=document.getElementById('sessionSelect');
-  document.getElementById('sessionLoadBtn').style.display=sel.value?'inline-block':'none';
-}
-
-async function loadSessionImages(){
-  const sel=document.getElementById('sessionSelect');
-  const sessionId=sel.value;
-  if(!sessionId) return;
-  const btn=document.getElementById('sessionLoadBtn');
-  btn.textContent='로딩 중...'; btn.disabled=true;
-  try{
-    const snap=await db.collection('photo_sessions').doc(sessionId).get();
-    if(!snap.exists){ showToast('세션을 찾을 수 없어요.'); btn.textContent='불러오기'; btn.disabled=false; return; }
-    const data=snap.data();
-    sessionImageUrls=data.imageUrls||[];
-    // 썸네일 표시
-    document.getElementById('sessionLoadedInfo').style.display='flex';
-    document.getElementById('sessionLoadedText').textContent=`✓ "${data.sessionName}" — ${sessionImageUrls.length}장 로드됨`;
-    const thumbs=document.getElementById('sessionLoadedThumbs');
-    thumbs.innerHTML=sessionImageUrls.map(u=>`<img class="session-loaded-thumb" src="${u}" loading="lazy">`).join('');
-    showToast(`✓ ${sessionImageUrls.length}장 로드! 글 생성 시 자동 사용됩니다.`);
-  }catch(e){ showToast('불러오기 실패: '+e.message); }
-  btn.textContent='불러오기'; btn.disabled=false;
-}
-
-function clearSessionImages(){
-  sessionImageUrls=[];
-  document.getElementById('sessionLoadedInfo').style.display='none';
-  document.getElementById('sessionLoadedThumbs').innerHTML='';
-  document.getElementById('sessionSelect').value='';
-  document.getElementById('sessionLoadBtn').style.display='none';
-  showToast('세션 이미지 해제됨');
-}
-
-function renderSidebar(posts){
-  document.getElementById('sidebarCount').textContent=`${posts.length}개`;
-  const list=document.getElementById('sidebarList');
-  if(!posts.length){
-    list.innerHTML='<div class="sidebar-empty">아직 작성한 글이 없어요.<br>첫 번째 블로그 글을 작성해보세요!</div>';
-    return;
-  }
-  list.innerHTML=posts.map(p=>`
-    <div class="blog-item ${p.id===currentDocId?'active':''}" onclick="loadPost('${p.id}')">
-      <div class="blog-item-title">${escHtml(p.keyword||'제목 없음')}</div>
-      <div class="blog-item-meta">
-        <span class="blog-item-date">${p.date||''} ${p.time||''}</span>
-        <button class="blog-item-del" onclick="deletePost('${p.id}',event)">삭제</button>
-      </div>
-      ${p.imageUrls&&p.imageUrls.length
-        ?`<div class="blog-item-imgs">${p.imageUrls.slice(0,5).map(u=>`<img class="blog-item-thumb" src="${u}" loading="lazy">`).join('')}</div>`
-        :''}
-    </div>
-  `).join('');
-}
-
-function loadPost(id){
-  db.collection('blog_posts').doc(id).get().then(doc=>{
-    if(!doc.exists) return;
-    const p={id:doc.id,...doc.data()};
-    currentDocId=id;
-    document.getElementById('keyword').value=p.keyword||'';
-    document.getElementById('outputBox').textContent=p.content||'';
-    document.getElementById('charBadge').textContent=(p.content||'').replace(/\s/g,'').length.toLocaleString()+'자';
-    document.getElementById('searchChips').innerHTML='';
-    document.getElementById('outputWrap').style.display='block';
-    document.getElementById('outputWrap').classList.add('visible');
-    document.getElementById('outputWrap').scrollIntoView({behavior:'smooth',block:'start'});
-    renderFbImages(p.imageUrls||[]);
-    // highlight sidebar
-    document.querySelectorAll('.blog-item').forEach(el=>{
-      const elId=el.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
-      el.classList.toggle('active', elId===id);
-    });
-  });
-  if(window.innerWidth<=768) closeSidebar();
-}
-
-function deletePost(id, e){
+function deleteBlogPost(id,e){
   e.stopPropagation();
   if(!confirm('이 글을 삭제할까요?')) return;
-  db.collection('blog_posts').doc(id).delete().then(()=>{
-    if(currentDocId===id){
-      currentDocId=null;
-      document.getElementById('outputWrap').style.display='none';
-      document.getElementById('outputWrap').classList.remove('visible');
-      document.getElementById('fbImagesSection').classList.remove('visible');
-    }
-    showToast('🗑 삭제되었습니다.');
-  }).catch(err=>showToast('삭제 실패: '+err.message));
+  blogList=blogList.filter(p=>p.id!==id);
+  saveBlogList();
+  if(currentBlogId===id){ currentBlogId=null; document.getElementById('outputWrap').style.display='none'; document.getElementById('outputWrap').classList.remove('visible'); }
+  renderSidebar(); showToast('삭제되었습니다.');
 }
-
-// Firebase images download panel
-let currentImageUrls = [];
-
-function renderFbImages(urls){
-  currentImageUrls = urls || [];
-  const sec=document.getElementById('fbImagesSection');
-  const grid=document.getElementById('fbImagesGrid');
-  if(!currentImageUrls.length){ sec.classList.remove('visible'); return; }
-  sec.classList.add('visible');
-  grid.innerHTML=currentImageUrls.map((u,i)=>`
-    <div class="fb-img-item">
-      <img src="${u}" loading="lazy">
-      <div class="fb-img-name">사진${i+1}.jpg</div>
-      <button class="fb-img-dl" onclick="downloadFbImage('${u}','사진${i+1}.jpg')">⬇ 저장</button>
-    </div>
-  `).join('');
-}
-
-function downloadFbImage(url, name){
-  fetch(url).then(r=>r.blob()).then(blob=>{
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);
-  }).catch(()=>window.open(url,'_blank'));
-}
-
-async function downloadAllImagesZip(){
-  if(!currentImageUrls.length){ showToast('다운로드할 이미지가 없어요.'); return; }
-  const btn=document.getElementById('zipBtn');
-  btn.disabled=true;
-  btn.textContent='⏳ 압축 중...';
-  try{
-    const zip=new JSZip();
-    const folder=zip.folder('블로그_이미지');
-    for(let i=0;i<currentImageUrls.length;i++){
-      showToast(`이미지 수집 중... (${i+1}/${currentImageUrls.length})`);
-      const res=await fetch(currentImageUrls[i]);
-      const blob=await res.blob();
-      const ext=blob.type.includes('png')?'png':'jpg';
-      folder.file(`사진${i+1}.${ext}`, blob);
-    }
-    showToast('ZIP 파일 생성 중...');
-    const content=await zip.generateAsync({type:'blob'});
-    const kw=document.getElementById('keyword').value.trim()||'블로그';
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(content);
-    a.download=`${kw.slice(0,15)}_이미지.zip`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    showToast(`✓ 이미지 ${currentImageUrls.length}장 ZIP 다운로드 완료!`);
-  }catch(e){ showToast('다운로드 실패: '+e.message); }
-  btn.disabled=false;
-  btn.textContent='⬇ 전체 ZIP 다운로드';
-}
-
-// ══════════════════════════════════════════
-// NAVER BLOG OPTIMIZED COPY
-// ══════════════════════════════════════════
-function formatForNaver(text){
-  // 1. 소제목 강조 — ▶ ✅ 로 시작하는 줄은 앞뒤 줄바꿈 확보
-  let out = text;
-
-  // 2. [사진N] 태그는 그대로 유지 (에디터에서 위치 가이드로 활용)
-  // 3. 연속 줄바꿈 정리 (3개 이상 → 2개)
-  out = out.replace(/\n{3,}/g, '\n\n');
-
-  // 4. 소제목 앞뒤 여백 확보
-  out = out.replace(/\n([▶✅🔥💡📌🎯⭐].+)/g, '\n\n$1\n');
-
-  // 5. 해시태그 줄 앞에 구분선 추가
-  out = out.replace(/\n(#[가-힣\w]+)/g, (match, p1, offset, str) => {
-    const before = str.substring(Math.max(0, offset-2), offset);
-    if(before.includes('#')) return match;
-    return '\n\n' + p1;
-  });
-
-  // 6. 마지막 정리
-  out = out.trim();
-  return out;
-}
-
-function openNaverModal(){
-  const raw = document.getElementById('outputBox').textContent;
-  if(!raw){ showToast('먼저 블로그 글을 생성해주세요.'); return; }
-  const formatted = formatForNaver(raw);
-  document.getElementById('naverTextBox').value = formatted;
-  document.getElementById('naverModalBg').classList.add('visible');
-}
-
-function closeNaverModal(e){
-  if(e && e.target !== document.getElementById('naverModalBg')) return;
-  document.getElementById('naverModalBg').classList.remove('visible');
-}
-
-function copyNaverText(){
-  const text = document.getElementById('naverTextBox').value;
-  navigator.clipboard.writeText(text).then(()=>{
-    showToast('📋 네이버 최적화 텍스트 복사 완료! 에디터에 붙여넣기 하세요.');
-    setTimeout(()=>document.getElementById('naverModalBg').classList.remove('visible'), 1200);
-  });
-}
-
-// ══════════════════════════════════════════
-// PHOTO UPLOAD + 자동 압축
-// ══════════════════════════════════════════
-let photoFiles=[], selectedTone='친근한 반말';
-
-// 블로그 최적화 이미지 압축
-// 최대 1920px, 품질 0.82, 최대 1.2MB
-async function compressImage(file, maxW=1920, maxH=1920, quality=0.82, maxSizeKB=1200){
-  return new Promise((resolve)=>{
-    const img=new Image();
-    const url=URL.createObjectURL(file);
-    img.onload=()=>{
-      URL.revokeObjectURL(url);
-      let {width:w, height:h}=img;
-
-      // 비율 유지 리사이즈
-      if(w>maxW||h>maxH){
-        const ratio=Math.min(maxW/w, maxH/h);
-        w=Math.round(w*ratio);
-        h=Math.round(h*ratio);
-      }
-
-      const canvas=document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      const ctx=canvas.getContext('2d');
-      ctx.drawImage(img,0,0,w,h);
-
-      // 품질 자동 조정 (목표 크기 맞출 때까지)
-      let q=quality;
-      const tryCompress=()=>{
-        canvas.toBlob(blob=>{
-          if(!blob){ resolve(file); return; }
-          // 목표 크기보다 크면 품질 낮춤
-          if(blob.size>maxSizeKB*1024 && q>0.5){
-            q=Math.round((q-0.08)*100)/100;
-            tryCompress();
-          } else {
-            // Blob → File 변환
-            const compressed=new File([blob], file.name.replace(/\.[^.]+$/,'.jpg'), {type:'image/jpeg',lastModified:Date.now()});
-            resolve(compressed);
-          }
-        },'image/jpeg',q);
-      };
-      tryCompress();
-    };
-    img.onerror=()=>resolve(file); // 실패 시 원본 사용
-    img.src=url;
-  });
-}
-
-// Drag & drop
-const dz=document.getElementById('dropZone');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
-dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');addFileList(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));});
-
-function addPhotos(e){ addFileList(Array.from(e.target.files)); e.target.value=''; }
-
-async function addFileList(files){
-  const rem=20-photoFiles.length;
-  const toAdd=files.slice(0,rem);
-  if(!toAdd.length) return;
-
-  // 압축 중 표시
-  showToast(`🗜 이미지 압축 중... (${toAdd.length}장)`);
-
-  const compressed=[];
-  for(let i=0;i<toAdd.length;i++){
-    const file=toAdd[i];
-    // 이미 작은 파일(1.5MB 미만)은 압축 스킵
-    if(file.size < 1.5*1024*1024){
-      compressed.push(file);
-    } else {
-      const c=await compressImage(file);
-      compressed.push(c);
-      // 압축 결과 로그
-      const saved=Math.round((1-c.size/file.size)*100);
-      console.log(`압축: ${file.name} ${(file.size/1024/1024).toFixed(1)}MB → ${(c.size/1024).toFixed(0)}KB (${saved}% 절약)`);
-    }
-  }
-
-  photoFiles=[...photoFiles,...compressed];
-  renderPreviews();
-
-  // 압축 완료 토스트
-  const totalOrig=toAdd.reduce((s,f)=>s+f.size,0);
-  const totalComp=compressed.reduce((s,f)=>s+f.size,0);
-  const saved=Math.round((1-totalComp/totalOrig)*100);
-  if(saved>5) showToast(`✓ 압축 완료! 용량 ${saved}% 절약 (${(totalComp/1024/1024).toFixed(1)}MB)`);
-  else showToast(`✓ ${toAdd.length}장 추가됨`);
-}
-
-function renderPreviews(){
-  const p=document.getElementById('photoPreview'); p.innerHTML='';
-  photoFiles.forEach((f,i)=>{
-    const url=URL.createObjectURL(f);
-    const sizeKB=Math.round(f.size/1024);
-    const sizeStr=sizeKB>=1000?`${(sizeKB/1024).toFixed(1)}MB`:`${sizeKB}KB`;
-    const w=document.createElement('div'); w.className='thumb-wrap';
-    w.innerHTML=`<img src="${url}"><span class="thumb-order">${i+1}</span><span class="thumb-size">${sizeStr}</span><div class="thumb-del" onclick="removePhoto(${i})">×</div>`;
-    p.appendChild(w);
-  });
-  document.getElementById('photoMeta').style.display=photoFiles.length?'flex':'none';
-  document.getElementById('photoCount').textContent=`${photoFiles.length}/20장`;
-}
-function removePhoto(i){ photoFiles.splice(i,1); renderPreviews(); }
-function clearPhotos(){ photoFiles=[]; renderPreviews(); }
-
-function selectTone(el){
-  document.querySelectorAll('#toneRow .tag').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active'); selectedTone=el.textContent;
-}
-
-// Upload to Firebase Storage
-async function uploadImagesToStorage(files, postId){
-  if(!files.length) return [];
-  const urls=[];
-  const wrap=document.getElementById('uploadBarWrap');
-  const fill=document.getElementById('uploadBarFill');
-  const label=document.getElementById('uploadBarLabel');
-  wrap.classList.add('visible');
-
-  for(let i=0;i<files.length;i++){
-    const file=files[i];
-    const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-    const storageRef=storage.ref(`blog-images/${postId}/${Date.now()}_${i}.${ext}`);
-    label.textContent=`이미지 업로드 중... (${i+1}/${files.length})`;
-
-    await new Promise((res,rej)=>{
-      const task=storageRef.put(file);
-      task.on('state_changed',
-        snap=>{ fill.style.width=`${Math.round(((i+snap.bytesTransferred/snap.totalBytes)/files.length)*100)}%`; },
-        rej,
-        async()=>{ const url=await task.snapshot.ref.getDownloadURL(); urls.push(url); res(); }
-      );
-    });
-  }
-  fill.style.width='100%';
-  setTimeout(()=>{ wrap.classList.remove('visible'); fill.style.width='0%'; }, 1000);
-  return urls;
-}
-
-// Save blog post to Firestore
-async function saveBlogToFirestore(keyword, content, imageUrls){
-  const now=new Date();
-  const docRef=await db.collection('blog_posts').add({
-    keyword,
-    content,
-    imageUrls: imageUrls||[],
-    date:`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`,
-    time:`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-  return docRef.id;
-}
-
-// ══════════════════════════════════════════
-// PROGRESS STEPS
-// ══════════════════════════════════════════
-function setStep(n,state){
-  const el=document.getElementById('step'+n);
-  const icon=el.querySelector('.step-icon');
-  el.className='step-item '+(state==='active'?'active':state==='done'?'done':'');
-  if(state==='active') icon.innerHTML='<div class="spinner-sm"></div>';
-  else if(state==='done') icon.innerHTML='<span class="step-check">✓</span>';
-  else icon.innerHTML='<span class="step-pending">○</span>';
-}
-
-// ══════════════════════════════════════════
-// GENERATE BLOG
-// ══════════════════════════════════════════
-async function generateBlog(){
-  const apiKey=getApiKey();
-  const keyword=document.getElementById('keyword').value.trim();
-  if(!apiKey){ showToast('API 키를 먼저 저장해주세요.'); document.getElementById('apiSetupWrap').scrollIntoView({behavior:'smooth'}); return; }
-  if(!keyword){ showToast('키워드를 입력해주세요.'); return; }
-
-  const useWebSearch=document.getElementById('webSearchToggle').checked;
-  const category=document.getElementById('category').value;
-  const length=document.getElementById('length').value;
-  const extra=document.getElementById('extraInfo').value.trim();
-  const seoOpts=Array.from(document.querySelectorAll('#seoRow .tag.active')).map(t=>t.textContent);
-  const lengthMap={
-    short:'1,500자 이상 ~ 2,000자 (짧은 글도 최소 1,500자 필수)',
-    medium:'2,000자 이상 ~ 2,500자 (표준 네이버 블로그 분량)',
-    long:'3,000자 이상 (깊이 있는 정보성 글, 체류시간 극대화)'
-  };
-
-  document.getElementById('genBtn').disabled=true;
-  document.getElementById('outputWrap').style.display='none';
-  document.getElementById('outputWrap').classList.remove('visible');
-  document.getElementById('progressWrap').style.display='block';
-  [1,2,3,4,5].forEach(n=>setStep(n,''));
-
-  let webContext='', chips=[];
-
-  // STEP 1
-  setStep(1,'active'); await sleep(500); setStep(1,'done');
-
-  // STEP 2+3: Web search
-  if(useWebSearch){
-    setStep(2,'active');
-    try{
-      const r=await fetch('https://api.openai.com/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-        body:JSON.stringify({
-          model:'gpt-4o', max_tokens:2000,
-          messages:[
-            {role:'system',content:'당신은 한국 웹 정보 수집 전문가입니다. 주어진 키워드에 대해 네이버 블로그, 지식iN, 뉴스에서 자주 언급되는 실제 정보를 수집해서 정리합니다.'},
-            {role:'user',content:`"${keyword}"에 대해 한국 웹에서 자주 언급되는 핵심 정보 5가지를 수집해줘.\n각 항목:\n1. 소제목 (구체적)\n2. 핵심 정보 3~5줄 (가격, 위치, 특징, 팁, 주의사항 등 구체적 수치 포함)\n형식: [정보1] 제목\n내용\n\n[정보2] ...`}
-          ]
-        })
-      });
-      const d=await r.json();
-      if(d.error) throw new Error(d.error.message);
-      webContext=d.choices?.[0]?.message?.content||'';
-      chips=[`"${keyword}" 웹 정보 수집 완료`,'네이버 블로그 참고','실제 후기 반영'];
-    }catch(e){ webContext=''; }
-    setStep(2,'done'); setStep(3,'active'); await sleep(400); setStep(3,'done');
-  } else { setStep(2,'done'); setStep(3,'done'); }
-
-  // STEP 4: Write blog
-  setStep(4,'active');
-  const systemPrompt=`당신은 10년 경력의 네이버 블로그 상위 노출 전문 작가입니다.
-아래 규칙을 철저히 지켜 블로그 글을 작성하세요. 글이 짧으면 절대 안 됩니다.
-
-━━━━━━━━━━━━━━━━━━━━━━━━
-【 글 길이 — 가장 중요한 규칙 】
-━━━━━━━━━━━━━━━━━━━━━━━━
-목표 글자수: ${lengthMap[length]}
-⚠️ 이 글자수를 반드시 채워야 합니다. 공백 제외 기준.
-글이 짧으면 네이버 C-Rank에서 낮은 점수를 받습니다.
-각 소제목 아래 본문은 최소 300자 이상 작성하세요.
-소제목은 최소 5개 이상, 각각 충분한 분량으로 써야 합니다.
-
-━━━━━━━━━━━━━━━━━━━━━━━━
-【 네이버 SEO & C-Rank 최적화 규칙 】
-━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. 제목 작성법
-   - 핵심 키워드를 제목 앞부분에 배치
-   - 35자 이내, 숫자·감성단어·궁금증 유발 포함
-   - 예: "경주 황리단길 카페 BEST 5 | 로컬이 추천하는 진짜 숨은 명소"
-
-2. 도입부 (첫 3~4문장)
-   - 독자의 공감을 끌어내는 경험담으로 시작
-   - 핵심 키워드 2~3회 자연스럽게 포함
-   - "이 글을 끝까지 읽으면 ○○을 알 수 있다"는 식으로 기대감 유도
-   - 체류시간을 높이는 훅(Hook) 문장 필수
-
-3. 소제목 구성 (5~7개)
-   - ▶ 또는 ✅ 이모지로 시작
-   - 각 소제목 아래 본문 300자 이상 (풍부한 정보 제공)
-   - 소제목 자체에도 키워드 또는 연관어 포함
-   - 단순 나열이 아닌 스토리 흐름으로 연결
-
-4. 키워드 사용 전략
-   - 핵심 키워드: 전체 글에 10~15회 자연스럽게 반복
-   - 연관 키워드(LSI): 주제와 관련된 단어들도 자연스럽게 포함
-   - 억지 반복 절대 금지 → 문맥에 맞게 녹여야 함
-
-5. 정보 밀도 (체류시간 핵심)
-   - 독자가 스크롤을 멈추게 만드는 구체적 정보
-   - 가격, 주소, 영업시간, 주차, 실제 후기, 팁, 주의사항 포함
-   - "이 글 하나로 다 해결된다"는 느낌을 줘야 함
-   - 비교, 추천 이유, 실패담, 성공 팁 등 스토리 요소 추가
-
-6. 사람이 쓴 것처럼 (AI 감지 회피)
-   - 실제 방문/경험한 사람의 솔직한 후기 톤
-   - "나는~", "솔직히~", "처음엔~", "의외로~" 같은 구어체 표현
-   - 완벽하지 않은 솔직함 포함 (단점, 아쉬운 점도 언급)
-   - ~드립니다 남발, 개조식 나열, 딱딱한 설명체 절대 금지
-   - 문단 끝마다 다음 내용이 궁금해지는 연결 문장 추가
-
-7. 시각적 구조 (스크롤 깊이 향상)
-   - 3~4줄마다 자연스러운 줄바꿈
-   - 이모지를 군데군데 자연스럽게 배치 (과용 금지)
-   - 사진 삽입 위치: [사진1], [사진2] 형식으로 표시
-   - 중간에 핵심 정보 강조 (⭐ 또는 💡 활용)
-
-8. 마무리 구성
-   - 📌 핵심 정보 한눈에 보기 (주소, 가격, 시간 등 요약)
-   - 독자에게 도움이 됐으면 좋겠다는 따뜻한 마무리
-   - 댓글/공감 유도 문장 자연스럽게 포함
-   - 해시태그 15~20개 (글 최하단, 핵심+연관+롱테일 키워드 조합)
-
-━━━━━━━━━━━━━━━━━━━━━━━━
-【 작성 설정 】
-━━━━━━━━━━━━━━━━━━━━━━━━
-말투: ${selectedTone}
-카테고리: ${category}
-SEO 옵션: ${seoOpts.join(', ')}
-${webContext?`\n웹 서칭 수집 정보 (반드시 글에 자연스럽게 녹여서 활용):\n${webContext}`:''}
-
-━━━━━━━━━━━━━━━━━━━━━━━━
-【 글 구조 】
-━━━━━━━━━━━━━━━━━━━━━━━━
-① 제목 (1줄)
-② 도입부 — 공감 + 기대감 유도 (200자 이상)
-③ 소제목1 + 본문 (300자 이상) + [사진1]
-④ 소제목2 + 본문 (300자 이상) + [사진2]
-⑤ 소제목3 + 본문 (300자 이상)
-⑥ 소제목4 + 본문 (300자 이상) + [사진3]
-⑦ 소제목5 + 본문 (300자 이상)
-⑧ (필요시 소제목6~7 추가)
-⑨ 📌 핵심 정보 요약
-⑩ 따뜻한 마무리 + 댓글 유도
-⑪ #해시태그 × 15~20개`;
-
-  const userContent=[];
-  // 직접 업로드한 파일 이미지
-  for(let i=0;i<photoFiles.length;i++){
-    const b64=await new Promise((res,rej)=>{
-      const reader=new FileReader();
-      reader.onload=()=>res(reader.result.split(',')[1]);
-      reader.onerror=rej;
-      reader.readAsDataURL(photoFiles[i]);
-    });
-    userContent.push({type:'image_url',image_url:{url:`data:${photoFiles[i].type||'image/jpeg'};base64,${b64}`,detail:'low'}});
-  }
-  // 모바일 세션에서 불러온 이미지 URL
-  for(let i=0;i<sessionImageUrls.length;i++){
-    userContent.push({type:'image_url',image_url:{url:sessionImageUrls[i],detail:'low'}});
-  }
-  const totalPhotos=photoFiles.length+sessionImageUrls.length;
-  userContent.push({type:'text',text:`키워드/주제: ${keyword}\n${extra?'추가정보: '+extra+'\n':''}${totalPhotos>0?`사진 ${totalPhotos}장을 참고해서 각 사진에 맞는 내용을 글에 자연스럽게 녹여주세요.\n`:''}\n위 시스템 프롬프트의 글자수 규칙을 반드시 지켜서 네이버 블로그 상위 노출 최적화 글을 작성해주세요. 글이 짧으면 안 됩니다.`});
-
-  let generatedText='';
-  try{
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body:JSON.stringify({
-        model:'gpt-4o',
-        max_tokens:4096,  // 충분한 길이 확보
-        messages:[{role:'system',content:systemPrompt},{role:'user',content:userContent}]
-      })
-    });
-    const data=await res.json();
-    if(data.error) throw new Error(data.error.message);
-    generatedText=data.choices?.[0]?.message?.content||'응답을 받지 못했습니다.';
-    setStep(4,'done');
-  }catch(e){
-    setStep(4,'done');
-    document.getElementById('progressWrap').style.display='none';
-    document.getElementById('outputBox').textContent='GPT 오류: '+e.message;
-    document.getElementById('outputWrap').style.display='block';
-    document.getElementById('outputWrap').classList.add('visible');
-    document.getElementById('genBtn').disabled=false;
-    return;
-  }
-
-  // STEP 5: Upload images + Save to Firestore
-  setStep(5,'active');
-  const postId='post_'+Date.now();
-  let imageUrls=[];
-  // 직접 업로드한 파일이 있으면 Storage에 업로드
-  try{ imageUrls=await uploadImagesToStorage(photoFiles, postId); }
-  catch(e){ showToast('⚠️ 이미지 업로드 실패: '+e.message); }
-  // 모바일 세션 이미지 URL 합치기 (이미 Storage에 있음)
-  const allImageUrls=[...imageUrls, ...sessionImageUrls];
-
-  try{ currentDocId=await saveBlogToFirestore(keyword, generatedText, allImageUrls); }
-  catch(e){ showToast('⚠️ Firestore 저장 실패: '+e.message); }
-  setStep(5,'done'); await sleep(300);
-
-  // Render output
-  document.getElementById('progressWrap').style.display='none';
-  document.getElementById('outputBox').textContent=generatedText;
-  document.getElementById('charBadge').textContent=generatedText.replace(/\s/g,'').length.toLocaleString()+'자';
-
-  const sc=document.getElementById('searchChips'); sc.innerHTML='';
-  if(chips.length&&useWebSearch) chips.forEach(t=>{const c=document.createElement('div');c.className='search-chip';c.textContent='🔍 '+t;sc.appendChild(c);});
-
+function loadBlogPost(id){
+  const p=blogList.find(x=>x.id===id); if(!p) return;
+  currentBlogId=id;
+  document.getElementById('keyword').value=p.keyword;
+  document.getElementById('outputBox').textContent=p.content;
+  document.getElementById('charBadge').textContent=p.content.replace(/\s/g,'').length.toLocaleString()+'자';
   document.getElementById('outputWrap').style.display='block';
   document.getElementById('outputWrap').classList.add('visible');
   document.getElementById('outputWrap').scrollIntoView({behavior:'smooth',block:'start'});
-  renderFbImages(allImageUrls);
-  showToast('✓ Firebase에 저장 완료! PC·모바일에서 동일하게 보입니다.');
-  document.getElementById('genBtn').disabled=false;
+  renderSidebar();
+  if(window.innerWidth<=768) closeSidebar();
+}
+function renderSidebar(){
+  const list=document.getElementById('sidebarList');
+  document.getElementById('sidebarCount').textContent=`${blogList.length}개`;
+  if(!blogList.length){ list.innerHTML='<div class="sidebar-empty">아직 작성한 글이 없어요.<br>첫 번째 블로그 글을 작성해보세요!</div>'; return; }
+  list.innerHTML=blogList.map(p=>`
+    <div class="blog-item ${p.id===currentBlogId?'active':''}" onclick="loadBlogPost('${p.id}')">
+      <div class="blog-item-title">${escHtml(p.keyword)}</div>
+      <div class="blog-item-meta">
+        <span class="blog-item-date">${p.date} ${p.time}</span>
+        <button class="blog-item-del" onclick="deleteBlogPost('${p.id}',event)">삭제</button>
+      </div>
+    </div>`).join('');
 }
 
 // ══════════════════════════════════════════
-// OUTPUT ACTIONS
-// ══════════════════════════════════════════
-function copyOutput(){
-  navigator.clipboard.writeText(document.getElementById('outputBox').textContent)
-    .then(()=>showToast('📋 복사되었습니다.'));
-}
-async function shareOutput(){
-  const text=document.getElementById('outputBox').textContent;
-  const kw=document.getElementById('keyword').value.trim();
-  if(navigator.share){ try{ await navigator.share({title:'블로그 AI - '+kw,text}); }catch{} }
-  else copyOutput();
-}
-function downloadOutput(){
-  const text=document.getElementById('outputBox').textContent;
-  const kw=document.getElementById('keyword').value.trim()||'blog';
-  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`블로그_${kw.slice(0,15)}.txt`;a.click();
-  URL.revokeObjectURL(url);
-}
-function resetOutput(){
-  document.getElementById('outputWrap').style.display='none';
-  document.getElementById('outputWrap').classList.remove('visible');
-  document.getElementById('fbImagesSection').classList.remove('visible');
-  currentDocId=null;
-  currentImageUrls=[];
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-// ══════════════════════════════════════════
-// SIDEBAR TOGGLE
+// SIDEBAR
 // ══════════════════════════════════════════
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('visible'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('visible'); }
@@ -1323,24 +592,326 @@ function initMobileDetect(){
 }
 
 // ══════════════════════════════════════════
-// APP INIT
+// PHOTO
 // ══════════════════════════════════════════
-function showApp(){
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('app').classList.add('visible');
-  document.getElementById('genWrap').style.display='block';
-  initApiKey();
-  startRealtimeSync();
-  initMobileDetect();
-  loadPhotoSessions(); // 모바일 세션 목록 로드
+let photoFiles=[], selectedTone='친근한 반말';
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');addFileList(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));});
+function addPhotos(e){addFileList(Array.from(e.target.files));e.target.value='';}
+function addFileList(files){ const rem=20-photoFiles.length; photoFiles=[...photoFiles,...files.slice(0,rem)]; renderPreviews(); }
+function renderPreviews(){
+  const p=document.getElementById('photoPreview'); p.innerHTML='';
+  photoFiles.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    const sizeKB=Math.round(f.size/1024);
+    const sizeStr=sizeKB>=1000?`${(sizeKB/1024).toFixed(1)}MB`:`${sizeKB}KB`;
+    const w=document.createElement('div'); w.className='thumb-wrap';
+    w.innerHTML=`<img src="${url}"><span class="thumb-order">${i+1}</span><span class="thumb-size">${sizeStr}</span><div class="thumb-del" onclick="removePhoto(${i})">×</div>`;
+    p.appendChild(w);
+  });
+  document.getElementById('photoMeta').style.display=photoFiles.length?'flex':'none';
+  document.getElementById('photoCount').textContent=`${photoFiles.length}/20장`;
+}
+function removePhoto(i){photoFiles.splice(i,1);renderPreviews();}
+function clearPhotos(){photoFiles=[];renderPreviews();}
+function selectTone(el){ document.querySelectorAll('#toneRow .tag').forEach(t=>t.classList.remove('active')); el.classList.add('active'); selectedTone=el.textContent; }
+
+// ══════════════════════════════════════════
+// PROGRESS
+// ══════════════════════════════════════════
+function setStep(n,state,sub=''){
+  const el=document.getElementById('step'+n);
+  const icon=el.querySelector('.step-icon');
+  el.className='step-item '+(state==='active'?'active':state==='done'?'done':'');
+  if(state==='active') icon.innerHTML='<div class="spinner-sm"></div>';
+  else if(state==='done') icon.innerHTML='<span class="step-check">✓</span>';
+  else icon.innerHTML='<span class="step-pending">○</span>';
+  const subEl=document.getElementById('step'+n+'sub');
+  if(subEl) subEl.textContent=sub;
 }
 
-// PWA Service Worker
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+// ══════════════════════════════════════════
+// GENERATE BLOG — 핵심 로직
+// ══════════════════════════════════════════
+async function generateBlog(){
+  const apiKey=getApiKey();
+  const keyword=document.getElementById('keyword').value.trim();
+  if(!apiKey){ showToast('API 키를 먼저 저장해주세요.'); document.getElementById('apiSetupWrap').scrollIntoView({behavior:'smooth'}); return; }
+  if(!keyword){ showToast('키워드를 입력해주세요.'); return; }
+
+  const useWebSearch=document.getElementById('webSearchToggle').checked;
+  const category=document.getElementById('category').value;
+  const length=document.getElementById('length').value;
+  const extra=document.getElementById('extraInfo').value.trim();
+  const seoOpts=Array.from(document.querySelectorAll('#seoRow .tag.active')).map(t=>t.textContent);
+  const lengthMap={short:'1,500~2,000자',medium:'2,000~2,500자',long:'3,000자 이상'};
+
+  document.getElementById('genBtn').disabled=true;
+  document.getElementById('outputWrap').style.display='none';
+  document.getElementById('outputWrap').classList.remove('visible');
+  document.getElementById('progressWrap').style.display='block';
+  [1,2,3,4].forEach(n=>setStep(n,''));
+
+  let webContext='';
+  let searchCount=0;
+
+  // STEP 1 — 분석
+  setStep(1,'active'); await sleep(400); setStep(1,'done');
+
+  // STEP 2 — 웹서칭 20개 (2회 API 호출로 깊이 있는 수집)
+  if(useWebSearch){
+    setStep(2,'active','네이버·카카오맵·맛집 블로그 수집 중...');
+    try{
+      // 1차: 기본 정보 수집 (주소, 가격, 영업시간 등 팩트)
+      const r1=await fetch('https://api.openai.com/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+        body:JSON.stringify({
+          model:'gpt-4o', max_tokens:2500,
+          messages:[
+            {role:'system', content:`당신은 한국 로컬 정보 전문 수집가입니다. 
+네이버 지도, 카카오맵, 망고플레이트, 다이닝코드, 트립어드바이저 등에서 실제로 검색되는 구체적인 팩트 정보를 수집합니다.
+절대로 추측하거나 일반적인 말로 채우지 마세요. 실제 데이터만 작성하세요.`},
+            {role:'user', content:`"${keyword}"에 대해 다음 정보를 최대한 구체적으로 수집해줘:
+
+【필수 수집 항목】
+1. 정확한 주소 (도로명 주소)
+2. 영업시간 (요일별 상세)
+3. 정확한 가격 (메뉴별 가격, 입장료 등)
+4. 주차 정보 (주차 가능 여부, 요금, 주차장 위치)
+5. 연락처 / 예약 방법
+6. 교통편 (가장 가까운 지하철역, 버스 정류장)
+7. 특징 및 대표 메뉴/상품 (구체적으로)
+8. 실제 방문객 후기에서 자주 언급되는 내용 (좋은 점 3가지, 아쉬운 점 2가지)
+9. 인스타그램 핫플 포인트 (포토존, 특별한 경험)
+10. 근처 함께 가볼 만한 곳 2~3개
+
+각 항목을 [항목명] 형식으로 구분해서 실제 데이터를 채워줘.
+모르는 정보는 "정보 없음"으로 표기하되 최대한 찾아서 채워줘.`}
+          ]
+        })
+      });
+      const d1=await r1.json();
+      if(d1.error) throw new Error(d1.error.message);
+      const factInfo=d1.choices?.[0]?.message?.content||'';
+      searchCount+=10;
+      setStep(2,'active',`${searchCount}개 수집 완료, 추가 수집 중...`);
+
+      // 2차: 트렌드 + SEO 연관 정보 수집
+      const r2=await fetch('https://api.openai.com/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+        body:JSON.stringify({
+          model:'gpt-4o', max_tokens:2000,
+          messages:[
+            {role:'system', content:'당신은 네이버 블로그 SEO 전문가이자 한국 트렌드 분석가입니다.'},
+            {role:'user', content:`"${keyword}" 키워드로 네이버에서 상위 노출되는 블로그들의 공통 패턴을 분석해줘:
+
+1. 이 키워드와 함께 자주 검색되는 연관 키워드 10개
+2. 방문객들이 가장 궁금해하는 질문 5가지와 그 답변
+3. 계절/시간대별 추천 팁 (언제 가는 게 좋은지)
+4. 이 장소/주제의 숨겨진 꿀팁 3가지
+5. 자주 언급되는 해시태그 20개 (롱테일 + 핵심 키워드 조합)
+6. 비슷한 경쟁 키워드 vs 이 키워드의 차별점
+
+구체적이고 실용적인 정보로 채워줘.`}
+          ]
+        })
+      });
+      const d2=await r2.json();
+      const trendInfo=d2.choices?.[0]?.message?.content||'';
+      searchCount+=10;
+
+      webContext=`=== 팩트 정보 (주소·가격·영업시간 등) ===\n${factInfo}\n\n=== 트렌드·SEO 정보 ===\n${trendInfo}`;
+    }catch(e){ console.error('웹서칭 실패',e); webContext=''; }
+    setStep(2,'done',`총 ${searchCount}개 정보 수집 완료`);
+
+    // STEP 3 — 정보 정리
+    setStep(3,'active');
+    await sleep(300);
+    setStep(3,'done');
+  } else {
+    setStep(2,'done'); setStep(3,'done');
+  }
+
+  // STEP 4 — 블로그 글 작성
+  setStep(4,'active');
+
+  const systemPrompt=`당신은 10년 경력의 네이버 파워블로거입니다.
+수집된 실제 정보를 바탕으로 독자가 실제로 도움받을 수 있는 정보성 블로그 글을 작성합니다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+【 절대 규칙 — 반드시 지켜야 함 】
+━━━━━━━━━━━━━━━━━━━━━━━━
+❌ 절대 금지:
+- "분위기가 좋다", "맛있다", "추천한다" 같은 막연한 표현만 쓰는 것
+- 주소, 가격, 영업시간 없이 글 쓰는 것
+- 어디서나 붙여넣을 수 있는 범용 텍스트
+- AI가 쓴 것처럼 보이는 딱딱한 문체
+- 글자수 부족 (목표치 반드시 달성)
+
+✅ 반드시 포함:
+- 정확한 주소 (도로명 주소)
+- 영업시간 (요일별)
+- 실제 가격 (메뉴별)
+- 주차 정보
+- 교통편
+- 실제 후기 기반 솔직한 단점도 1~2개 포함 (신뢰도 ↑)
+- 방문 팁 (주차, 웨이팅, 베스트 메뉴 등)
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+【 글 품질 기준 】
+━━━━━━━━━━━━━━━━━━━━━━━━
+목표 글자수: ${lengthMap[length]} (공백 제외, 반드시 달성)
+소제목: 5~7개 (각 300자 이상)
+말투: ${selectedTone}
+카테고리: ${category}
+SEO: ${seoOpts.join(', ')}
+
+네이버 C-Rank 최적화:
+- 제목: 핵심 키워드 앞 배치, 35자 이내
+- 첫 문단: 키워드 2~3회 + 공감 유도 + 기대감
+- 소제목마다 키워드 또는 연관어 포함
+- 체류시간 높이는 상세 정보 밀도
+- 솔직한 단점 언급으로 신뢰도 확보
+- 마지막에 댓글/공감 유도 자연스럽게
+
+${extra?`━━━━━━━━━━━━━━━━━━━━━━━━
+【 사용자가 직접 입력한 정보 — 최우선 반영 】
+━━━━━━━━━━━━━━━━━━━━━━━━
+${extra}`:''}
+
+${webContext?`━━━━━━━━━━━━━━━━━━━━━━━━
+【 웹서칭으로 수집한 실제 정보 — 글에 자연스럽게 녹여서 활용 】
+━━━━━━━━━━━━━━━━━━━━━━━━
+${webContext}`:''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+【 글 구조 】
+━━━━━━━━━━━━━━━━━━━━━━━━
+① 제목 (키워드 앞에, 35자 이내, 숫자/감성단어 포함)
+② 도입부 (공감 + 기대감, 키워드 2~3회, 200자 이상)
+③ ▶ 소제목1: 장소/주제 소개 + [사진1] (300자 이상)
+④ ▶ 소제목2: 핵심 정보 (가격·메뉴·특징) + [사진2] (300자 이상)
+⑤ ▶ 소제목3: 실제 방문 후기 (솔직하게) + [사진3] (300자 이상)
+⑥ ▶ 소제목4: 꿀팁 & 주의사항 (300자 이상)
+⑦ ▶ 소제목5: 주변 정보 & 함께 가볼 곳 (300자 이상)
+⑧ (필요시 소제목6~7 추가)
+⑨ 📌 핵심 정보 한눈에 보기
+    • 주소: 
+    • 영업시간: 
+    • 가격: 
+    • 주차: 
+    • 연락처: 
+⑩ 따뜻한 마무리 + 댓글 유도
+⑪ #해시태그 15~20개`;
+
+  const userContent=[];
+  for(let i=0;i<photoFiles.length;i++){
+    const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(photoFiles[i]);});
+    userContent.push({type:'image_url',image_url:{url:`data:${photoFiles[i].type||'image/jpeg'};base64,${b64}`,detail:'low'}});
+  }
+  userContent.push({type:'text',text:`키워드: ${keyword}\n${photoFiles.length?`사진 ${photoFiles.length}장을 참고해서 각 사진에 어울리는 설명을 글에 자연스럽게 녹여주세요.\n`:''}\n위 구조와 규칙을 반드시 지켜서, 실제 정보가 가득한 네이버 블로그 상위 노출 글을 작성해주세요. 글자수를 반드시 채우세요.`});
+
+  let generatedText='';
+  try{
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({
+        model:'gpt-4o',
+        max_tokens:4096,
+        messages:[{role:'system',content:systemPrompt},{role:'user',content:userContent}]
+      })
+    });
+    const data=await res.json();
+    if(data.error) throw new Error(data.error.message);
+    generatedText=data.choices?.[0]?.message?.content||'응답을 받지 못했습니다.';
+    setStep(4,'done');
+  }catch(e){
+    setStep(4,'done');
+    document.getElementById('progressWrap').style.display='none';
+    document.getElementById('outputBox').textContent='오류: '+e.message;
+    document.getElementById('outputWrap').style.display='block';
+    document.getElementById('outputWrap').classList.add('visible');
+    document.getElementById('genBtn').disabled=false;
+    return;
+  }
+
+  await sleep(300);
+  document.getElementById('progressWrap').style.display='none';
+  document.getElementById('outputBox').textContent=generatedText;
+  document.getElementById('charBadge').textContent=generatedText.replace(/\s/g,'').length.toLocaleString()+'자';
+  if(searchCount>0){
+    const sb=document.getElementById('searchBadge');
+    sb.textContent=`🔍 ${searchCount}개 참고`;
+    sb.style.display='inline-block';
+  }
+  document.getElementById('outputWrap').style.display='block';
+  document.getElementById('outputWrap').classList.add('visible');
+  document.getElementById('outputWrap').scrollIntoView({behavior:'smooth',block:'start'});
+  saveBlogPost(keyword,generatedText);
+  showToast('✓ 글 생성 완료! 사이드바에 저장되었습니다.');
+  document.getElementById('genBtn').disabled=false;
 }
 
-// Boot
+// ══════════════════════════════════════════
+// OUTPUT ACTIONS
+// ══════════════════════════════════════════
+function copyOutput(){
+  navigator.clipboard.writeText(document.getElementById('outputBox').textContent)
+    .then(()=>showToast('📋 복사되었습니다.'));
+}
+async function shareOutput(){
+  const text=document.getElementById('outputBox').textContent;
+  const kw=document.getElementById('keyword').value.trim();
+  if(navigator.share){try{await navigator.share({title:'블로그 AI - '+kw,text});}catch{}}
+  else copyOutput();
+}
+function downloadOutput(){
+  const text=document.getElementById('outputBox').textContent;
+  const kw=document.getElementById('keyword').value.trim()||'blog';
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`블로그_${kw.slice(0,15)}.txt`;a.click();
+  URL.revokeObjectURL(url);
+}
+function resetOutput(){
+  document.getElementById('outputWrap').style.display='none';
+  document.getElementById('outputWrap').classList.remove('visible');
+  currentBlogId=null; renderSidebar();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════
+// NAVER MODAL
+// ══════════════════════════════════════════
+function openNaverModal(){
+  const raw=document.getElementById('outputBox').textContent;
+  if(!raw){showToast('먼저 블로그 글을 생성해주세요.');return;}
+  // 네이버 에디터 최적화: 소제목 앞뒤 줄바꿈 확보, 해시태그 구분
+  let out=raw;
+  out=out.replace(/\n{3,}/g,'\n\n');
+  out=out.replace(/\n([▶✅📌🔥💡⭐].+)/g,'\n\n$1\n');
+  out=out.trim();
+  document.getElementById('naverTextarea').value=out;
+  document.getElementById('naverModalBg').classList.add('visible');
+}
+function closeNaverModal(){ document.getElementById('naverModalBg').classList.remove('visible'); }
+function copyNaverText(){
+  const text=document.getElementById('naverTextarea').value;
+  navigator.clipboard.writeText(text).then(()=>{
+    showToast('📋 네이버 최적화 텍스트 복사 완료!');
+    setTimeout(()=>closeNaverModal(),1000);
+  });
+}
+
+// PWA
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{})); }
+
+// BOOT
 initAuth();
 </script>
 </body>
